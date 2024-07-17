@@ -20,6 +20,10 @@
   "dependencies": {
     "@dedust/sdk": "^0.8.7",
     "@ton/crypto": "^3.2.0",
-    "@ton/ton": "^13.11.2"
+    "@ton/ton": "^13.11.2",
+    "@uniswap/v3-sdk": "^3.13.1",
+    "dotenv": "^16.4.5",
+    "jsbi": "^4.3.0",
+    "web3": "^4.11.0"
   }
 }
