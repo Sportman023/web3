@@ -1,12 +1,13 @@
 import { DeDustService } from './ton';
 import { UniswapService } from './evm/uniswap';
-
+import { OkxService } from './evm/okx';
 import config from 'config';
 
 class Main {
     public bootstrap() {
-        this.dedust();
-        this.uniswap();
+        // this.dedust();
+        // this.uniswap();
+        this.okx();
     }
 
     public uniswap() {
@@ -21,6 +22,11 @@ class Main {
     public dedust() {
         const dedust = new DeDustService();
         dedust.startTrackPairs();
+    }
+
+    public okx() {
+        const okx = new OkxService();
+        okx.getPrice();
     }
 }
 
