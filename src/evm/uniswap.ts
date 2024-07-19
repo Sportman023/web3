@@ -1,81 +1,64 @@
 import 'dotenv/config';
-import JSBI from 'jsbi';
-import { TickMath, FullMath } from '@uniswap/v3-sdk';
-import Web3 from 'web3';
+import { ethers } from 'ethers';
 
 const INFURA_URL_MAINNET = process.env.INFURA_URL_MAINNET as string;
 
-interface Slot0 {
-    sqrtPriceX96: string;
-    tick: string;
-}
+export class UniswapService {
+    private ethUsdtConfig: any;
+    private contract: any;
 
-export class UniswapPriceService {
-    private web3: Web3;
-    private contractAddress: string;
-    private abi: any[];
-
-    constructor(contractAddress: string, abi: any[]) {
-        this.web3 = new Web3(INFURA_URL_MAINNET);
-        this.contractAddress = contractAddress;
-        this.abi = abi;
+    constructor(ethUsdtConfig: any) {
+        this.ethUsdtConfig = ethUsdtConfig;
+        this.setupContract();
     }
 
-    public async fetch(
-        inputAmount: number,
-        baseTokenDecimals: number,
-        quoteTokenDecimals: number
-    ): Promise<void> {
-        const slot0 = await this.getUniswapV3UsdtSlot0();
-        const currentTick = parseInt(slot0.tick);
-        console.log('currentTick: ', currentTick);
+    public async getPrice(): Promise<{
+        buyOneOfToken0: number;
+        buyOneOfToken1: number;
+    }> {
+        const slot0 = await this.contract.slot0();
+        const sqrtPriceX96 = Number(slot0.sqrtPriceX96);
 
-        const sqrtRatioX96FromSqrtPriceX96 = JSBI.BigInt(
-            slot0.sqrtPriceX96.toString()
-        );
-        const priceFromSqrtRatio = this.getPrice(
-            sqrtRatioX96FromSqrtPriceX96,
-            inputAmount,
-            baseTokenDecimals,
-            quoteTokenDecimals
-        );
-        console.log(
-            'priceFromSqrtRatio: ',
-            Number(priceFromSqrtRatio.toString()) / 10 ** quoteTokenDecimals
+        const token0Decimals = this.ethUsdtConfig.get('token0Decimals');
+        const token1Decimals = this.ethUsdtConfig.get('token1Decimals');
+
+        const buyOneOfToken0 =
+            (Number(sqrtPriceX96) / 2 ** 96) ** 2 /
+            Number(10 ** token0Decimals / 10 ** token1Decimals);
+
+        const buyOneOfToken1 = Number(
+            (1 / buyOneOfToken0).toFixed(token0Decimals)
         );
 
-        const sqrtRatioX96FromTick = TickMath.getSqrtRatioAtTick(currentTick);
-        const priceFromTick = this.getPrice(
-            sqrtRatioX96FromTick,
-            inputAmount,
-            baseTokenDecimals,
-            quoteTokenDecimals
-        );
-        console.log(
-            'priceFromTick: ',
-            Number(priceFromTick.toString()) / 10 ** quoteTokenDecimals
+        return { buyOneOfToken0, buyOneOfToken1 };
+    }
+
+    private async setupContract(): Promise<void> {
+        const provider = new ethers.JsonRpcProvider(INFURA_URL_MAINNET);
+        this.contract = new ethers.Contract(
+            this.ethUsdtConfig.get('contractAddress'),
+            this.ethUsdtConfig.get('abi'),
+            provider
         );
     }
 
-    private getPrice(
-        sqrtRatioX96: JSBI,
-        inputAmount: number,
-        baseTokenDecimals: number,
-        quoteTokenDecimals: number
-    ): JSBI {
-        const ratioX192 = JSBI.multiply(sqrtRatioX96, sqrtRatioX96);
-        const baseAmount = JSBI.BigInt(inputAmount * 10 ** baseTokenDecimals);
+    public startTrackPairs() {
+        setInterval(async () => {
+            const { buyOneOfToken0, buyOneOfToken1 } = await this.getPrice();
+            const token0Symbol = this.ethUsdtConfig.get(
+                'token0Symbol'
+            ) as string;
+            const token1Symbol = this.ethUsdtConfig.get(
+                'token1Symbol'
+            ) as string;
 
-        const shift = JSBI.leftShift(JSBI.BigInt(1), JSBI.BigInt(192));
+            let result: any = {
+                [token0Symbol]: buyOneOfToken0,
+                [token1Symbol]: buyOneOfToken1,
+            };
 
-        return FullMath.mulDivRoundingUp(ratioX192, baseAmount, shift);
-    }
-
-    private async getUniswapV3UsdtSlot0(): Promise<Slot0> {
-        const contract = new this.web3.eth.Contract(
-            this.abi,
-            this.contractAddress
-        );
-        return await contract.methods.slot0().call();
+            console.log({ ...result });
+            console.log('------------------------\n');
+        }, 5000);
     }
 }

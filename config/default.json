@@ -979,7 +979,9 @@
                 }
             ],
             "token0Decimals": 6,
-            "token1Decimals": 18
+            "token1Decimals": 18,
+            "token0Symbol": "ethToUsdt",
+            "token1Symbol": "UsdtToEth"
         }
     }
 }

@@ -13,6 +13,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/config": "^3.3.4",
     "@types/node": "^20.11.17",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
@@ -21,9 +22,8 @@
     "@dedust/sdk": "^0.8.7",
     "@ton/crypto": "^3.2.0",
     "@ton/ton": "^13.11.2",
-    "@uniswap/v3-sdk": "^3.13.1",
+    "config": "^3.3.12",
     "dotenv": "^16.4.5",
-    "jsbi": "^4.3.0",
-    "web3": "^4.11.0"
+    "ethers": "^6.13.1"
   }
 }
