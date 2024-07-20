@@ -1,6 +1,6 @@
 {
     "uniswap": {
-        "eth_usdt": {
+        "ethUsdt": {
             "contractAddress": "0x11b815efB8f581194ae79006d24E0d814B7697F6",
             "abi": [
                 {
@@ -981,7 +981,16 @@
             "token0Decimals": 6,
             "token1Decimals": 18,
             "token0Symbol": "ethToUsdt",
-            "token1Symbol": "UsdtToEth"
+            "token1Symbol": "usdtToEth"
+        }
+    },
+    "binance": {
+        "baseUrl": "https://api.binance.com",
+        "getPricePath": "/api/v3/ticker/price",
+        "ethUsdt": {
+            "symbol": "ETHUSDT",
+            "token0Symbol": "ethToUsdt",
+            "token1Symbol": "usdtToEth"
         }
     }
 }
