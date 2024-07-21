@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { ethers } from 'ethers';
 
 const INFURA_URL_MAINNET = process.env.INFURA_URL_MAINNET as string;

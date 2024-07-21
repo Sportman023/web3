@@ -1,11 +1,10 @@
-import 'dotenv/config';
 import * as CryptoJS from 'crypto-js';
 
 const ACCESS_KEY = process.env.OKX_ACCESS_KEY as string;
 const PASSPHRASE = process.env.OKX_PASSPHRASE as string;
 const SECRET_KEY = process.env.OKX_SECRET_KEY as string;
-const API_URL = 'https://www.okx.com/api/v5/asset/convert-dust-assets';
-const REQUEST_PATH = '/api/v5/asset/convert-dust-assets';
+const BASE_URL = 'https://www.okx.com';
+const REQUEST_PATH = '/api/v5/public/price-limit?instId=1INCH-USDT-SWAP';
 
 export class OkxService {
     constructor() {}
@@ -14,21 +13,18 @@ export class OkxService {
         buyOneOfToken0: number;
         buyOneOfToken1: number;
     }> {
-        const body = { ccy: ['ETH', 'USDT'] };
-
         const timestamp = new Date().toISOString();
 
         const signature = this.signRequest(
             timestamp,
-            'POST',
+            'GET',
             REQUEST_PATH,
             SECRET_KEY,
-            JSON.stringify(body)
+            ''
         );
 
-        const response = await fetch(API_URL, {
-            method: 'post',
-            body: JSON.stringify(body),
+        const response = await fetch(BASE_URL + REQUEST_PATH, {
+            method: 'get',
             headers: {
                 'Content-Type': 'application/json',
                 'OK-ACCESS-SIGN': signature,
@@ -37,13 +33,12 @@ export class OkxService {
                 'OK-ACCESS-PASSPHRASE': PASSPHRASE,
             },
         });
-        const data = await response.json();
-
-        console.log(data);
+        const data: any = await response.json();
+        const item = data.data.at(0);
 
         return {
-            buyOneOfToken0: 0,
-            buyOneOfToken1: 0,
+            buyOneOfToken0: Number(item.buyLmt),
+            buyOneOfToken1: 1 / item.buyLmt,
         };
     }
 

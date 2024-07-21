@@ -1,7 +1,6 @@
-import { DeDustService } from './ton';
-import { UniswapService } from './evm/uniswap';
-import { OkxService } from './evm/okx';
-import { BinanceService } from './evm/binance';
+import 'dotenv/config';
+import { DeDustService, UniswapService } from './dex';
+import { OkxService, BinanceService } from './cex';
 import config from 'config';
 
 class Main {
@@ -9,16 +8,16 @@ class Main {
         this.startTrackPairs();
     }
 
-    public startTrackPairs(): void {
+    public async startTrackPairs(): Promise<void> {
         setInterval(async () => {
             console.log(new Date().toISOString());
             const promises: Promise<any>[] = [];
             promises.push(this.uniswap());
             promises.push(this.binance());
+            promises.push(this.okx());
             await Promise.all(promises);
 
             // this.dedust();
-            // this.okx();
 
             console.log('------------------------\n');
         }, 5000);
@@ -46,8 +45,7 @@ class Main {
             binanceConfig,
             'ethUsdt'
         );
-        const { buyOneOfToken0, buyOneOfToken1 } =
-            await binanceService.getPrice();
+        const { buyOneOfToken0, buyOneOfToken1 } = await binanceService.getPrice();
         this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Binance');
     }
 
@@ -68,9 +66,11 @@ class Main {
         console.log(`${provider}: `, { ...result });
     }
 
-    public okx() {
+    public async okx() {
+        const pairConfig: any = config.get('okx.ethUsdt');
         const okx = new OkxService();
-        okx.getPrice();
+        const { buyOneOfToken0, buyOneOfToken1 } = await okx.getPrice();
+        this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'OKX');
     }
 }
 
