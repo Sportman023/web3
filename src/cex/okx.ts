@@ -1,29 +1,41 @@
+import c from 'config';
 import * as CryptoJS from 'crypto-js';
 
 const ACCESS_KEY = process.env.OKX_ACCESS_KEY as string;
 const PASSPHRASE = process.env.OKX_PASSPHRASE as string;
 const SECRET_KEY = process.env.OKX_SECRET_KEY as string;
-const BASE_URL = 'https://www.okx.com';
-const REQUEST_PATH = '/api/v5/public/price-limit?instId=1INCH-USDT-SWAP';
 
 export class OkxService {
-    constructor() {}
+    private okxConfig: any;
+    private pair: string;
+    constructor(okxConfig: any, pair: string) {
+        this.okxConfig = okxConfig;
+        this.pair = pair;
+    }
 
     public async getPrice(): Promise<{
         buyOneOfToken0: number;
         buyOneOfToken1: number;
     }> {
-        const timestamp = new Date().toISOString();
+        const baseUrl: string = this.okxConfig.get('baseUrl');
+        const getPricePath: string = this.okxConfig.get('getPricePath');
+        const pairConfig: any = this.okxConfig.get(this.pair);
 
+        const pathWithSymbol: string = `${getPricePath}&uly=${pairConfig.get(
+            'symbol'
+        )}`;
+        const url: string = `${baseUrl}${pathWithSymbol}`;
+
+        const timestamp = new Date().toISOString();
         const signature = this.signRequest(
             timestamp,
             'GET',
-            REQUEST_PATH,
+            this.okxConfig.get('getPricePath'),
             SECRET_KEY,
             ''
         );
 
-        const response = await fetch(BASE_URL + REQUEST_PATH, {
+        const response = await fetch(url, {
             method: 'get',
             headers: {
                 'Content-Type': 'application/json',
@@ -33,12 +45,12 @@ export class OkxService {
                 'OK-ACCESS-PASSPHRASE': PASSPHRASE,
             },
         });
-        const data: any = await response.json();
-        const item = data.data.at(0);
+        const body: any = await response.json();
+        const item = body.data.at(0);
 
         return {
-            buyOneOfToken0: Number(item.buyLmt),
-            buyOneOfToken1: 1 / item.buyLmt,
+            buyOneOfToken0: Number(item.markPx),
+            buyOneOfToken1: 1 / item.markPx,
         };
     }
 
@@ -52,8 +64,6 @@ export class OkxService {
         const message = timestamp + method + requestPath + body;
         const hmacSHA256 = CryptoJS.HmacSHA256(message, secretKey);
         const signature = CryptoJS.enc.Base64.stringify(hmacSHA256);
-
-        // CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(timestamp + 'GET' + '/api/v5/account/balance?ccy=BTC', secretKey))
 
         return signature;
     }

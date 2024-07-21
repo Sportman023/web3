@@ -10,7 +10,7 @@ class Main {
 
     public async startTrackPairs(): Promise<void> {
         setInterval(async () => {
-            console.log(new Date().toISOString());
+            console.log('🎬', new Date().toISOString());
             const promises: Promise<any>[] = [];
             promises.push(this.uniswap());
             promises.push(this.binance());
@@ -19,7 +19,9 @@ class Main {
 
             // this.dedust();
 
-            console.log('------------------------\n');
+            console.log(
+                '────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n'
+            );
         }, 5000);
     }
 
@@ -45,8 +47,18 @@ class Main {
             binanceConfig,
             'ethUsdt'
         );
-        const { buyOneOfToken0, buyOneOfToken1 } = await binanceService.getPrice();
+        const { buyOneOfToken0, buyOneOfToken1 } =
+            await binanceService.getPrice();
         this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Binance');
+    }
+
+    public async okx() {
+        const okxConfig: any = config.get('okx');
+        const pairConfig: any = config.get('okx.ethUsdt');
+
+        const okxService = new OkxService(okxConfig, 'ethUsdt');
+        const { buyOneOfToken0, buyOneOfToken1 } = await okxService.getPrice();
+        this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'OKX');
     }
 
     private printPrice(
@@ -64,13 +76,6 @@ class Main {
         };
 
         console.log(`${provider}: `, { ...result });
-    }
-
-    public async okx() {
-        const pairConfig: any = config.get('okx.ethUsdt');
-        const okx = new OkxService();
-        const { buyOneOfToken0, buyOneOfToken1 } = await okx.getPrice();
-        this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'OKX');
     }
 }
 
