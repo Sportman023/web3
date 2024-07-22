@@ -15,7 +15,7 @@ export class UniswapService {
         buyOneOfToken0: number;
         buyOneOfToken1: number;
     }> {
-        await this.getGasPrice();
+        const transactionGasFee: number = await this.getGasPrice();
         const slot0 = await this.contract.slot0();
         const sqrtPriceX96 = Number(slot0.sqrtPriceX96);
 
@@ -29,32 +29,41 @@ export class UniswapService {
             (1 / buyOneOfToken0).toFixed(token0Decimals)
         );
 
+        console.log('\tSwap cost: ', transactionGasFee * buyOneOfToken0);
+
+        const buyOneOfToken0WithFee =
+            buyOneOfToken0 + transactionGasFee * buyOneOfToken0;
+        const buyOneOfToken1WithFee = buyOneOfToken1 + transactionGasFee;
+
+        console.log({ buyOneOfToken0WithFee, buyOneOfToken1WithFee });
+
         return { buyOneOfToken0, buyOneOfToken1 };
     }
 
     public async getGasPrice(): Promise<number> {
         const feeData = await this.provider.getFeeData();
-        // console.log('gasPrice: ', feeData);
 
-        if (feeData.maxFeePerGas !== null) {
-            console.log(
-                '\tmaxFeePerGas',
-                Number(formatUnits(feeData.maxFeePerGas, 'gwei'))
+        let transactionGasFee: number = 0;
+        if (
+            feeData.gasPrice !== null &&
+            feeData.maxPriorityFeePerGas !== null
+        ) {
+            const gasPrice: number = Number(
+                formatUnits(feeData.gasPrice, 'ether')
             );
+
+            const maxPriorityFeePerGas: number = Number(
+                formatUnits(feeData.maxPriorityFeePerGas, 'ether')
+            );
+
+            const swapGasLimit: number = 356190; // NOTE: Based on etherscan.io/gastracker
+            transactionGasFee =
+                (gasPrice + maxPriorityFeePerGas) * swapGasLimit;
         } else {
-            console.log('maxFeePerGas is null');
+            console.log('null');
         }
 
-        if (feeData.gasPrice !== null) {
-            console.log(
-                '\tgasPrice',
-                Number(formatUnits(feeData.gasPrice, 'gwei'))
-            );
-        } else {
-            console.log('gasPrice is null');
-        }
-
-        return Number(formatUnits(feeData.gasPrice, 'gwei'));
+        return transactionGasFee;
     }
 
     private async setupContract(): Promise<void> {
