@@ -1,27 +1,66 @@
 import 'dotenv/config';
-import { DeDustService, UniswapService } from './dex';
-import { OkxService, BinanceService } from './cex';
 import config from 'config';
+import { UniswapService } from './dex';
+import { OkxService, BinanceService } from './cex';
+import { CSVBuilder } from './report/csvBuilder';
+import { TelegramBot } from './transport/telegram';
 
 class Main {
-    public bootstrap(): void {
-        this.startTrackPairs();
+
+    private readonly bot: TelegramBot;
+    private readonly reportBuilder: CSVBuilder;
+    private reportRecords: any[] = [];
+
+    constructor() {
+        this.bot = new TelegramBot();
+        this.reportBuilder = new CSVBuilder();
     }
 
-    public async startTrackPairs(): Promise<void> {
+    public bootstrap(): void {
+        try {
+            this.startTrackPairs();
+            this.startReporting();
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    public startReporting() {
+        const chatIds = process.env.TELEGRAM_CHAT_IDS as string;
+        const ids = chatIds.split(',');
+        setInterval(async () => {
+            if (!this.reportRecords.length) {
+                ids.forEach(async chatId => {
+                    await this.bot.sendMessage(chatId, '🗑️ No opportunities to arbitration.');
+                })
+                return;
+            }
+            const csv = this.reportBuilder.prepareDocument(this.reportRecords);
+            ids.forEach(async chatId => {
+                await this.bot.sendDocument(chatId, csv);
+            })
+            this.reportRecords = [];
+        }, 1000 * 30);
+    }
+
+    public startTrackPairs() {
         setInterval(async () => {
             console.log('🎬', new Date().toISOString());
             const promises: Promise<any>[] = [];
             promises.push(this.uniswap());
             promises.push(this.binance());
             promises.push(this.okx());
-            await Promise.all(promises);
+            const [UNISWAP, BINANCE, OKX] = await Promise.all(promises);
+            const ethUsdtValues = [ UNISWAP['ETH-USDT'], BINANCE['ETH-USDT'], OKX['ETH-USDT']];
+            const valid = this.validateOpportunity(ethUsdtValues, 5);
+            if (valid.isValid) {
+                this.reportRecords.push({
+                    pairs: { UNISWAP, BINANCE, OKX },
+                    maxShift: valid.maxShift
+                })
+            }
 
-            // this.dedust();
-
-            console.log(
-                '────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n'
-            );
+            console.log('────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n');
         }, 5000);
     }
 
@@ -29,14 +68,11 @@ class Main {
         const pairConfig: any = config.get('uniswap.ethUsdt');
         const uniswapService: UniswapService = new UniswapService(pairConfig);
 
-        const { buyOneOfToken0, buyOneOfToken1 } =
-            await uniswapService.getPrice();
-        this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Uniswap');
-    }
+        const { buyOneOfToken0, buyOneOfToken1 } = await uniswapService.getPrice();
+        const result = this.formatPrices(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Uniswap');
+        console.log(`${result.provider}: `, { ...result.tokenPrices });
 
-    private dedust() {
-        const dedust = new DeDustService();
-        dedust.startTrackPairs();
+        return result.tokenPrices;
     }
 
     private async binance() {
@@ -47,35 +83,51 @@ class Main {
             binanceConfig,
             'ethUsdt'
         );
-        const { buyOneOfToken0, buyOneOfToken1 } =
-            await binanceService.getPrice();
-        this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Binance');
+        const { buyOneOfToken0, buyOneOfToken1 } = await binanceService.getPrice();
+        const result = this.formatPrices(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Binance');
+        console.log(`${result.provider}: `, { ...result.tokenPrices });
+
+        return result.tokenPrices;
     }
 
-    public async okx() {
+    private async okx() {
         const okxConfig: any = config.get('okx');
         const pairConfig: any = config.get('okx.ethUsdt');
 
         const okxService = new OkxService(okxConfig, 'ethUsdt');
         const { buyOneOfToken0, buyOneOfToken1 } = await okxService.getPrice();
-        this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'OKX');
+        const result = this.formatPrices(pairConfig, buyOneOfToken0, buyOneOfToken1, 'OKX');
+        console.log(`${result.provider}: `, { ...result.tokenPrices });
+
+        return result.tokenPrices;
     }
 
-    private printPrice(
-        pairConfig: any,
-        buyOneOfToken0: number,
-        buyOneOfToken1: number,
-        provider: string
-    ) {
+    private formatPrices(pairConfig: any, buyOneOfToken0: number, buyOneOfToken1: number, provider: string) {
         const token0Symbol: string = pairConfig.get('token0Symbol');
         const token1Symbol: string = pairConfig.get('token1Symbol');
 
-        let result: any = {
+        let tokenPrices: any = {
             [token0Symbol]: buyOneOfToken0,
             [token1Symbol]: buyOneOfToken1,
         };
 
-        console.log(`${provider}: `, { ...result });
+        return { provider, tokenPrices }
+    }
+
+    private validateOpportunity(ethUsdtValues: number[], opportunityValue: number = 10) {
+        let maxShift = 0;
+
+        for (let i = 0; i < ethUsdtValues.length; i++) {
+            for (let j = i + 1; j < ethUsdtValues.length; j++) {
+                const shift = Math.abs(ethUsdtValues[i] - ethUsdtValues[j]);
+                maxShift = Math.max(maxShift, shift);
+            }
+        }
+
+        return {
+            isValid: maxShift > opportunityValue,
+            maxShift: maxShift
+        };
     }
 }
 

@@ -19,15 +19,15 @@ class UniswapService {
         const buyOneOfToken0 = (Number(sqrtPriceX96) / 2 ** 96) ** 2 /
             Number(10 ** token0Decimals / 10 ** token1Decimals);
         const buyOneOfToken1 = Number((1 / buyOneOfToken0).toFixed(token0Decimals));
-        console.log('\tSwap cost: ', transactionGasFee * buyOneOfToken0);
+        // console.log('\tSwap cost: ', transactionGasFee * buyOneOfToken0);
         const buyOneOfToken0WithFee = buyOneOfToken0 + transactionGasFee * buyOneOfToken0;
         const buyOneOfToken1WithFee = buyOneOfToken1 + transactionGasFee;
-        console.log({ buyOneOfToken0WithFee, buyOneOfToken1WithFee });
+        // console.log({ buyOneOfToken0WithFee, buyOneOfToken1WithFee });
         return { buyOneOfToken0, buyOneOfToken1 };
     }
     async getGasPrice() {
         const feeData = await this.provider.getFeeData();
-        console.log({ feeData });
+        // console.log({feeData});
         if (feeData.gasPrice === null || feeData.maxPriorityFeePerGas == null) {
             return 0;
         }
