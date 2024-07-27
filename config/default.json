@@ -1,7 +1,7 @@
 {
     "uniswap": {
         "ethUsdt": {
-            "contractAddress": "0x11b815efB8f581194ae79006d24E0d814B7697F6",
+            "contractAddress": "0x641C00A822e8b671738d32a431a4Fb6074E5c79d",
             "abi": [
                 {
                     "inputs": [],
