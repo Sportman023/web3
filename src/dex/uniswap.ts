@@ -43,27 +43,18 @@ export class UniswapService {
     public async getGasPrice(): Promise<number> {
         const feeData = await this.provider.getFeeData();
 
-        let transactionGasFee: number = 0;
-        if (
-            feeData.gasPrice !== null &&
-            feeData.maxPriorityFeePerGas !== null
-        ) {
-            const gasPrice: number = Number(
-                formatUnits(feeData.gasPrice, 'ether')
-            );
+        console.log({feeData});
 
-            const maxPriorityFeePerGas: number = Number(
-                formatUnits(feeData.maxPriorityFeePerGas, 'ether')
-            );
 
-            const swapGasLimit: number = 356190; // NOTE: Based on etherscan.io/gastracker
-            transactionGasFee =
-                (gasPrice + maxPriorityFeePerGas) * swapGasLimit;
-        } else {
-            console.log('null');
+        if (feeData.gasPrice === null || feeData.maxPriorityFeePerGas == null) {
+            return 0;
         }
 
-        return transactionGasFee;
+        const gasPrice: number = Number(formatUnits(feeData.gasPrice, 'ether'));
+        const maxPriorityFeePerGas: number = Number(formatUnits(feeData.maxPriorityFeePerGas, 'ether'));
+
+        const swapGasLimit: number = 356190; // NOTE: Based on etherscan.io/gastracker
+        return (gasPrice + maxPriorityFeePerGas) * swapGasLimit;
     }
 
     private async setupContract(): Promise<void> {
