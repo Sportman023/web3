@@ -20,8 +20,8 @@ export class CSVBuilder {
     csv += `${headers.join(',')}\r\n`;
 
     jsonArray.forEach(item => {
-      const currentTime = new Date().toISOString();
-      const values = [currentTime];
+      const values = [];
+      values.push(item.currentTime);
 
       allPairs.forEach((pair: any) => {
         Array.from(exchanges).forEach((exchange: any) => {

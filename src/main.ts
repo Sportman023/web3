@@ -56,7 +56,8 @@ class Main {
             if (valid.isValid) {
                 this.reportRecords.push({
                     pairs: { UNISWAP, BINANCE, OKX },
-                    maxShift: valid.maxShift
+                    maxShift: valid.maxShift,
+                    currentTime: new Date().toISOString()
                 })
             }
 
