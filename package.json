@@ -13,6 +13,8 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/config": "^3.3.4",
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.11.17",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
@@ -20,6 +22,10 @@
   "dependencies": {
     "@dedust/sdk": "^0.8.7",
     "@ton/crypto": "^3.2.0",
-    "@ton/ton": "^13.11.2"
+    "@ton/ton": "^13.11.2",
+    "config": "^3.3.12",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.1"
   }
 }
