@@ -1,40 +1,27 @@
 export class CSVBuilder {
+    public prepareDocument(jsonArray: any[]) {
+        if (jsonArray.length === 0) return '';
 
-  public prepareDocument(jsonArray: any[]) {
-    if (jsonArray.length === 0) return '';
+        const allPairs = new Set();
+        const exchanges = new Set();
+        let csv = '';
 
-    const allPairs = new Set();
-    const exchanges = new Set();
-    let csv = '';
+        const headers = ['Provider', 'Pair', 'Price', 'Time'];
+        csv += `${headers.join(',')}\r\n`;
 
-    jsonArray.forEach(item => {
-      Object.keys(item.pairs).forEach(exchange => {
-        exchanges.add(exchange);
-        Object.keys(item.pairs[exchange]).forEach(pair => allPairs.add(pair));
-      });
-    });
+        jsonArray.forEach((item) => {
+            const currentTime = item.currentTime;
 
-    const headers = ['Time', ...Array.from(allPairs).flatMap(pair =>
-      Array.from(exchanges).map(exchange => `${exchange} ${pair}`)
-    ), 'MAX_SHIFT (USDT)'];
-    csv += `${headers.join(',')}\r\n`;
-
-    jsonArray.forEach(item => {
-      const values = [];
-      values.push(item.currentTime);
-
-      allPairs.forEach((pair: any) => {
-        Array.from(exchanges).forEach((exchange: any) => {
-          const value = item.pairs[exchange]?.[pair];
-          values.push(value !== undefined ? value.toFixed(8) : '');
+            item.results.forEach((result: any) => {
+                const values: any = [];
+                values.push(result.provider);
+                values.push(result.pair);
+                values.push(result.price);
+                values.push(currentTime);
+                csv += `${values.join(',')}\r\n`;
+            });
         });
-      });
 
-      values.push(item.maxShift.toFixed(8));
-
-      csv += `${values.join(',')}\r\n`;
-    });
-
-    return csv;
-  }
+        return csv;
+    }
 }

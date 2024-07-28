@@ -5,8 +5,13 @@ import { OkxService, BinanceService } from './cex';
 import { CSVBuilder } from './report/csvBuilder';
 import { TelegramBot } from './transport/telegram';
 
-class Main {
+interface getPriceResult {
+    provider: string;
+    pair: string;
+    price: number;
+}
 
+class Main {
     private readonly bot: TelegramBot;
     private readonly reportBuilder: CSVBuilder;
     private reportRecords: any[] = [];
@@ -30,15 +35,15 @@ class Main {
         const ids = chatIds.split(',');
         setInterval(async () => {
             if (!this.reportRecords.length) {
-                ids.forEach(async chatId => {
+                ids.forEach(async (chatId) => {
                     await this.bot.sendMessage(chatId, '🗑️ No opportunities to arbitration.');
-                })
+                });
                 return;
             }
             const csv = this.reportBuilder.prepareDocument(this.reportRecords);
-            ids.forEach(async chatId => {
+            ids.forEach(async (chatId) => {
                 await this.bot.sendDocument(chatId, csv);
-            })
+            });
             this.reportRecords = [];
         }, 1000 * 30);
     }
@@ -51,83 +56,78 @@ class Main {
             promises.push(this.binance());
             promises.push(this.okx());
             const [UNISWAP, BINANCE, OKX] = await Promise.all(promises);
-            const ethUsdtValues = [ UNISWAP['ETH-USDT'], BINANCE['ETH-USDT'], OKX['ETH-USDT']];
-            const valid = this.validateOpportunity(ethUsdtValues, 5);
+            const ethUsdtValues = [UNISWAP['price'], BINANCE['price'], OKX['price']];
+            const valid = this.validateOpportunity(ethUsdtValues, 1);
             if (valid.isValid) {
                 this.reportRecords.push({
-                    pairs: { UNISWAP, BINANCE, OKX },
+                    results: [UNISWAP, BINANCE, OKX],
                     maxShift: valid.maxShift,
-                    currentTime: new Date().toISOString()
-                })
+                    currentTime: new Date().toISOString(),
+                });
             }
 
             console.log('────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n');
         }, 5000);
     }
 
-    private async uniswap() {
+    private async uniswap(): Promise<getPriceResult> {
         const pairConfig: any = config.get('uniswap.ethUsdt');
         const uniswapService: UniswapService = new UniswapService(pairConfig);
 
         const { buyOneOfToken0, buyOneOfToken1 } = await uniswapService.getPrice();
-        const result = this.formatPrices(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Uniswap');
-        console.log(`${result.provider}: `, { ...result.tokenPrices });
+        const result = this.formatGetPriceResult(pairConfig, buyOneOfToken0, 'Uniswap');
+        console.log({ result });
 
-        return result.tokenPrices;
+        return result;
     }
 
-    private async binance() {
+    private async binance(): Promise<getPriceResult> {
         const binanceConfig: any = config.get('binance');
         const pairConfig: any = binanceConfig.get('ethUsdt');
 
-        const binanceService: BinanceService = new BinanceService(
-            binanceConfig,
-            'ethUsdt'
-        );
+        const binanceService: BinanceService = new BinanceService(binanceConfig, 'ethUsdt');
         const { buyOneOfToken0, buyOneOfToken1 } = await binanceService.getPrice();
-        const result = this.formatPrices(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Binance');
-        console.log(`${result.provider}: `, { ...result.tokenPrices });
+        const result = this.formatGetPriceResult(pairConfig, buyOneOfToken0, 'Binance');
+        console.log({ result });
 
-        return result.tokenPrices;
+        return result;
     }
 
-    private async okx() {
+    private async okx(): Promise<getPriceResult> {
         const okxConfig: any = config.get('okx');
         const pairConfig: any = config.get('okx.ethUsdt');
 
         const okxService = new OkxService(okxConfig, 'ethUsdt');
         const { buyOneOfToken0, buyOneOfToken1 } = await okxService.getPrice();
-        const result = this.formatPrices(pairConfig, buyOneOfToken0, buyOneOfToken1, 'OKX');
-        console.log(`${result.provider}: `, { ...result.tokenPrices });
+        const result = this.formatGetPriceResult(pairConfig, buyOneOfToken0, 'OKX');
+        console.log({ result });
 
-        return result.tokenPrices;
+        return result;
     }
 
-    private formatPrices(pairConfig: any, buyOneOfToken0: number, buyOneOfToken1: number, provider: string) {
+    private formatGetPriceResult(pairConfig: any, buyOneOfToken0: number, provider: string): getPriceResult {
         const token0Symbol: string = pairConfig.get('token0Symbol');
-        const token1Symbol: string = pairConfig.get('token1Symbol');
-
-        let tokenPrices: any = {
-            [token0Symbol]: buyOneOfToken0,
-            [token1Symbol]: buyOneOfToken1,
-        };
-
-        return { provider, tokenPrices }
+        return { provider, pair: token0Symbol, price: buyOneOfToken0 };
     }
 
     private validateOpportunity(ethUsdtValues: number[], opportunityValue: number = 10) {
-        let maxShift = 0;
+        let maxPrice = 0;
+        let minPrice = 0;
 
-        for (let i = 0; i < ethUsdtValues.length; i++) {
-            for (let j = i + 1; j < ethUsdtValues.length; j++) {
-                const shift = Math.abs(ethUsdtValues[i] - ethUsdtValues[j]);
-                maxShift = Math.max(maxShift, shift);
+        ethUsdtValues.forEach((value) => {
+            if (value > maxPrice) {
+                maxPrice = value;
             }
-        }
+            if (value < minPrice) {
+                minPrice = value;
+            }
+        });
+
+        const maxShift = maxPrice - minPrice;
 
         return {
             isValid: maxShift > opportunityValue,
-            maxShift: maxShift
+            maxShift: maxShift,
         };
     }
 }
