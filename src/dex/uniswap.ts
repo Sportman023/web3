@@ -29,13 +29,13 @@ export class UniswapService {
             (1 / buyOneOfToken0).toFixed(token0Decimals)
         );
 
-        console.log('\tSwap cost: ', transactionGasFee * buyOneOfToken0);
+        // console.log('\tSwap cost: ', transactionGasFee * buyOneOfToken0);
 
         const buyOneOfToken0WithFee =
             buyOneOfToken0 + transactionGasFee * buyOneOfToken0;
         const buyOneOfToken1WithFee = buyOneOfToken1 + transactionGasFee;
 
-        console.log({ buyOneOfToken0WithFee, buyOneOfToken1WithFee });
+        // console.log({ buyOneOfToken0WithFee, buyOneOfToken1WithFee });
 
         return { buyOneOfToken0, buyOneOfToken1 };
     }
@@ -43,8 +43,7 @@ export class UniswapService {
     public async getGasPrice(): Promise<number> {
         const feeData = await this.provider.getFeeData();
 
-        console.log({feeData});
-
+        // console.log({feeData});
 
         if (feeData.gasPrice === null || feeData.maxPriorityFeePerGas == null) {
             return 0;

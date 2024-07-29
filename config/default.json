@@ -980,8 +980,8 @@
             ],
             "token0Decimals": 6,
             "token1Decimals": 18,
-            "token0Symbol": "ethToUsdt",
-            "token1Symbol": "usdtToEth"
+            "token0Symbol": "ETH-USDT",
+            "token1Symbol": "USDT-ETH"
         }
     },
     "binance": {
@@ -989,8 +989,8 @@
         "getPricePath": "/api/v3/ticker/price",
         "ethUsdt": {
             "symbol": "ETHUSDT",
-            "token0Symbol": "ethToUsdt",
-            "token1Symbol": "usdtToEth"
+            "token0Symbol": "ETH-USDT",
+            "token1Symbol": "USDT-ETH"
         }
     },
     "okx": {
@@ -998,8 +998,8 @@
         "getPricePath": "/api/v5/public/mark-price?instType=SWAP",
         "ethUsdt": {
             "symbol": "ETH-USDT",
-            "token0Symbol": "ethToUsdt",
-            "token1Symbol": "usdtToEth"
+            "token0Symbol": "ETH-USDT",
+            "token1Symbol": "USDT-ETH"
         }
     }
 }
