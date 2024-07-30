@@ -45,7 +45,7 @@ class Main {
                 await this.bot.sendDocument(chatId, csv);
             });
             this.reportRecords = [];
-        }, 1000 * 30);
+        }, 1000 * 60 * 60 * 8);
     }
 
     public startTrackPairs() {
@@ -57,7 +57,7 @@ class Main {
             promises.push(this.okx());
             const [UNISWAP, BINANCE, OKX] = await Promise.all(promises);
             const ethUsdtValues = [UNISWAP['price'], BINANCE['price'], OKX['price']];
-            const valid = this.validateOpportunity(ethUsdtValues, 1);
+            const valid = this.validateOpportunity(ethUsdtValues, 5);
             if (valid.isValid) {
                 this.reportRecords.push({
                     results: [UNISWAP, BINANCE, OKX],
@@ -67,7 +67,7 @@ class Main {
             }
 
             console.log('────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n');
-        }, 5000);
+        }, 1000 * 60 * 3);
     }
 
     private async uniswap(): Promise<getPriceResult> {
