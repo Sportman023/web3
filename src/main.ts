@@ -45,7 +45,7 @@ class Main {
                 await this.bot.sendDocument(chatId, csv);
             });
             this.reportRecords = [];
-        }, 1000 * 60 * 3);
+        }, 1000 * 60 * 60 * 4);
     }
 
     public startTrackPairs() {
@@ -67,7 +67,7 @@ class Main {
             }
 
             console.log('────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n');
-        }, 1000 * 60 * 60 * 8);
+        }, 1000 * 60 * 3);
     }
 
     private async uniswap(): Promise<getPriceResult> {
