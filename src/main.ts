@@ -45,7 +45,7 @@ class Main {
                 await this.bot.sendDocument(chatId, csv);
             });
             this.reportRecords = [];
-        }, 1000 * 60 * 60 * 8);
+        }, 1000 * 60 * 60 * 4);
     }
 
     public startTrackPairs() {
@@ -111,8 +111,8 @@ class Main {
     }
 
     private validateOpportunity(ethUsdtValues: number[], opportunityValue: number = 10) {
-        let maxPrice = 0;
-        let minPrice = 0;
+        let maxPrice = ethUsdtValues[0];
+        let minPrice = ethUsdtValues[0];
 
         ethUsdtValues.forEach((value) => {
             if (value > maxPrice) {
