@@ -111,14 +111,14 @@ class Main {
     }
 
     private validateOpportunity(ethUsdtValues: number[], opportunityValue: number = 10) {
-        let maxPrice = 0;
-        let minPrice = 0;
+        let maxPrice = ethUsdtValues[0];
+        let minPrice = ethUsdtValues[0];
 
         ethUsdtValues.forEach((value) => {
             if (value > maxPrice) {
                 maxPrice = value;
             }
-            if (value < minPrice || minPrice === 0) {
+            if (value < minPrice) {
                 minPrice = value;
             }
         });
