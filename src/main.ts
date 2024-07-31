@@ -45,7 +45,7 @@ class Main {
                 await this.bot.sendDocument(chatId, csv);
             });
             this.reportRecords = [];
-        }, 1000 * 30);
+        }, 1000 * 60 * 3);
     }
 
     public startTrackPairs() {
@@ -67,7 +67,7 @@ class Main {
             }
 
             console.log('────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n');
-        }, 5000);
+        }, 1000 * 60 * 60 * 8);
     }
 
     private async uniswap(): Promise<getPriceResult> {
@@ -118,7 +118,7 @@ class Main {
             if (value > maxPrice) {
                 maxPrice = value;
             }
-            if (value < minPrice) {
+            if (value < minPrice || minPrice === 0) {
                 minPrice = value;
             }
         });
