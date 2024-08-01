@@ -1,4 +1,3 @@
-import c from 'config';
 import * as CryptoJS from 'crypto-js';
 
 const ACCESS_KEY = process.env.OKX_ACCESS_KEY as string;
@@ -21,19 +20,11 @@ export class OkxService {
         const getPricePath: string = this.okxConfig.get('getPricePath');
         const pairConfig: any = this.okxConfig.get(this.pair);
 
-        const pathWithSymbol: string = `${getPricePath}&uly=${pairConfig.get(
-            'symbol'
-        )}`;
+        const pathWithSymbol: string = `${getPricePath}&uly=${pairConfig.get('symbol')}`;
         const url: string = `${baseUrl}${pathWithSymbol}`;
 
         const timestamp = new Date().toISOString();
-        const signature = this.signRequest(
-            timestamp,
-            'GET',
-            this.okxConfig.get('getPricePath'),
-            SECRET_KEY,
-            ''
-        );
+        const signature = this.signRequest(timestamp, 'GET', this.okxConfig.get('getPricePath'), SECRET_KEY, '');
 
         const response = await fetch(url, {
             method: 'get',
@@ -54,13 +45,7 @@ export class OkxService {
         };
     }
 
-    signRequest(
-        timestamp: string,
-        method: string,
-        requestPath: string,
-        secretKey: string,
-        body: string
-    ): string {
+    signRequest(timestamp: string, method: string, requestPath: string, secretKey: string, body: string): string {
         const message = timestamp + method + requestPath + body;
         const hmacSHA256 = CryptoJS.HmacSHA256(message, secretKey);
         const signature = CryptoJS.enc.Base64.stringify(hmacSHA256);

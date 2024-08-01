@@ -4,33 +4,40 @@ import { OkxService, BinanceService } from './cex';
 import config from 'config';
 
 class Main {
+    private appConfig: any;
+
     public bootstrap(): void {
+        this.appConfig = config.get('application');
         this.startTrackPairs();
     }
 
     public async startTrackPairs(): Promise<void> {
         setInterval(async () => {
             console.log('🎬', new Date().toISOString());
-            const promises: Promise<any>[] = [];
-            promises.push(this.uniswap());
-            promises.push(this.binance());
-            promises.push(this.okx());
-            await Promise.all(promises);
+            const pairsToMonitor = this.appConfig.pairsToMonitor;
 
-            // this.dedust();
+            for (const pair of pairsToMonitor) {
+                const promises: Promise<any>[] = [];
+                promises.push(this.uniswap(pair));
+                promises.push(this.binance(pair));
+                promises.push(this.okx(pair));
+                await Promise.all(promises);
 
-            console.log(
-                '────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n'
-            );
-        }, 5000);
+                // this.dedust();
+
+                console.log('────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n');
+            }
+        }, 1000 * 5);
     }
 
-    private async uniswap() {
-        const pairConfig: any = config.get('uniswap.ethUsdt');
-        const uniswapService: UniswapService = new UniswapService(pairConfig);
+    private async uniswap(pair: string) {
+        const uniswapConfig: any = config.get('exchanges.uniswap');
+        const pairConfig: any = uniswapConfig[pair];
+        const netName: string = this.appConfig.get('netByPair')[pair];
+        const netUrlName: string = this.appConfig.get('urlByNet')[netName];
+        const uniswapService: UniswapService = new UniswapService(netName, netUrlName, pairConfig);
 
-        const { buyOneOfToken0, buyOneOfToken1 } =
-            await uniswapService.getPrice();
+        const { buyOneOfToken0, buyOneOfToken1 } = await uniswapService.getPrice();
         this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Uniswap');
     }
 
@@ -39,34 +46,25 @@ class Main {
         dedust.startTrackPairs();
     }
 
-    private async binance() {
-        const binanceConfig: any = config.get('binance');
-        const pairConfig: any = binanceConfig.get('ethUsdt');
+    private async binance(pair: string) {
+        const binanceConfig: any = config.get('exchanges.binance');
+        const pairConfig: any = binanceConfig[pair];
 
-        const binanceService: BinanceService = new BinanceService(
-            binanceConfig,
-            'ethUsdt'
-        );
-        const { buyOneOfToken0, buyOneOfToken1 } =
-            await binanceService.getPrice();
+        const binanceService: BinanceService = new BinanceService(binanceConfig, pair);
+        const { buyOneOfToken0, buyOneOfToken1 } = await binanceService.getPrice();
         this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Binance');
     }
 
-    public async okx() {
-        const okxConfig: any = config.get('okx');
-        const pairConfig: any = config.get('okx.ethUsdt');
+    public async okx(pair: string) {
+        const okxConfig: any = config.get('exchanges.okx');
+        const pairConfig: any = okxConfig[pair];
 
-        const okxService = new OkxService(okxConfig, 'ethUsdt');
+        const okxService = new OkxService(okxConfig, pair);
         const { buyOneOfToken0, buyOneOfToken1 } = await okxService.getPrice();
         this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'OKX');
     }
 
-    private printPrice(
-        pairConfig: any,
-        buyOneOfToken0: number,
-        buyOneOfToken1: number,
-        provider: string
-    ) {
+    private printPrice(pairConfig: any, buyOneOfToken0: number, buyOneOfToken1: number, provider: string) {
         const token0Symbol: string = pairConfig.get('token0Symbol');
         const token1Symbol: string = pairConfig.get('token1Symbol');
 
