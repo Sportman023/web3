@@ -1,12 +1,16 @@
 import { ethers, formatUnits } from 'ethers';
-const INFURA_URL_MAINNET = process.env.INFURA_URL_MAINNET as string;
 
 export class UniswapService {
     private pairConfig: any;
     private provider: any;
     private contract: any;
+    private netUrl: string;
+    private netName: string;
 
-    constructor(pairConfig: any) {
+    constructor(netName: string, netUrlName: string, pairConfig: any) {
+        this.netName = netName;
+        this.netUrl = process.env[netUrlName] as string;
+
         this.pairConfig = pairConfig;
         this.setupContract();
     }
@@ -21,18 +25,13 @@ export class UniswapService {
 
         const { token0Decimals, token1Decimals } = this.pairConfig;
 
-        const buyOneOfToken0 =
-            (Number(sqrtPriceX96) / 2 ** 96) ** 2 /
-            Number(10 ** token0Decimals / 10 ** token1Decimals);
+        const buyOneOfToken0 = (Number(sqrtPriceX96) / 2 ** 96) ** 2 / Number(10 ** token0Decimals / 10 ** token1Decimals);
 
-        const buyOneOfToken1 = Number(
-            (1 / buyOneOfToken0).toFixed(token0Decimals)
-        );
+        const buyOneOfToken1 = Number((1 / buyOneOfToken0).toFixed(token0Decimals));
 
         // console.log('\tSwap cost: ', transactionGasFee * buyOneOfToken0);
 
-        const buyOneOfToken0WithFee =
-            buyOneOfToken0 + transactionGasFee * buyOneOfToken0;
+        const buyOneOfToken0WithFee = buyOneOfToken0 + transactionGasFee * buyOneOfToken0;
         const buyOneOfToken1WithFee = buyOneOfToken1 + transactionGasFee;
 
         // console.log({ buyOneOfToken0WithFee, buyOneOfToken1WithFee });
@@ -43,7 +42,7 @@ export class UniswapService {
     public async getGasPrice(): Promise<number> {
         const feeData = await this.provider.getFeeData();
 
-        // console.log({feeData});
+        // console.log({ feeData });
 
         if (feeData.gasPrice === null || feeData.maxPriorityFeePerGas == null) {
             return 0;
@@ -57,11 +56,7 @@ export class UniswapService {
     }
 
     private async setupContract(): Promise<void> {
-        this.provider = new ethers.JsonRpcProvider(INFURA_URL_MAINNET);
-        this.contract = new ethers.Contract(
-            this.pairConfig.get('contractAddress'),
-            this.pairConfig.get('abi'),
-            this.provider
-        );
+        this.provider = new ethers.JsonRpcProvider(this.netUrl);
+        this.contract = new ethers.Contract(this.pairConfig.get('contractAddress')[this.netName], this.pairConfig.get('abi'), this.provider);
     }
 }
