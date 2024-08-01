@@ -96,7 +96,10 @@ class Main {
 
         const binanceService: BinanceService = new BinanceService(binanceConfig, pair);
         const { buyOneOfToken0, buyOneOfToken1 } = await binanceService.getPrice();
-        this.printPrice(pairConfig, buyOneOfToken0, buyOneOfToken1, 'Binance');
+        const result = this.formatGetPriceResult(pairConfig, buyOneOfToken0, 'Binance');
+        console.log({ result });
+
+        return result;
     }
 
     public async okx(pair: string): Promise<getPriceResult> {
