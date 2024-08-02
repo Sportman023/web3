@@ -11,6 +11,12 @@ interface getPriceResult {
     price: number;
 }
 
+interface interval {
+    hours: number;
+    minutes: number;
+    seconds: number;
+}
+
 class Main {
     private readonly bot: TelegramBot;
     private readonly reportBuilder: CSVBuilder;
@@ -35,6 +41,7 @@ class Main {
     public startReporting() {
         const chatIds = process.env.TELEGRAM_CHAT_IDS as string;
         const ids = chatIds.split(',');
+        const reportingInterval = this.getMillisecondsFromInterval(this.appConfig.get('reportingInterval'));
         setInterval(async () => {
             if (!this.reportRecords.length) {
                 ids.forEach(async (chatId) => {
@@ -47,10 +54,12 @@ class Main {
                 await this.bot.sendDocument(chatId, csv);
             });
             this.reportRecords = [];
-        }, 1000 * 60 * 60 * 4);
+        }, reportingInterval);
     }
 
     public startTrackPairs() {
+        const priceTrackingInterval = this.getMillisecondsFromInterval(this.appConfig.get('priceTrackingInterval'));
+
         setInterval(async () => {
             console.log('🎬', new Date().toISOString());
             const pairsToMonitor = this.appConfig.pairsToMonitor;
@@ -62,7 +71,10 @@ class Main {
                 promises.push(this.okx(pair));
                 const [UNISWAP, BINANCE, OKX] = await Promise.all(promises);
                 const ethUsdtValues = [UNISWAP['price'], BINANCE['price'], OKX['price']];
-                const valid = this.validateOpportunity(ethUsdtValues, 5);
+                const valid = this.validateOpportunity(ethUsdtValues);
+
+                console.log({ pair, ethUsdtValues, valid });
+
                 if (valid.isValid) {
                     this.reportRecords.push({
                         results: [UNISWAP, BINANCE, OKX],
@@ -73,7 +85,7 @@ class Main {
             }
 
             console.log('────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────\n');
-        }, 1000 * 60 * 3);
+        }, priceTrackingInterval);
     }
 
     private async uniswap(pair: string): Promise<getPriceResult> {
@@ -119,7 +131,13 @@ class Main {
         return { provider, pair: token0Symbol, price: buyOneOfToken0 };
     }
 
-    private validateOpportunity(ethUsdtValues: number[], opportunityValue: number = 10) {
+    private getMillisecondsFromInterval(interval: interval): number {
+        return interval.hours * 60 * 60 * 1000 + interval.minutes * 60 * 1000 + interval.seconds * 1000;
+    }
+
+    private validateOpportunity(ethUsdtValues: number[]) {
+        const opportunityThreshold = this.appConfig.get('opportunityThreshold');
+
         let maxPrice = ethUsdtValues[0];
         let minPrice = ethUsdtValues[0];
 
@@ -133,9 +151,11 @@ class Main {
         });
 
         const maxShift = maxPrice - minPrice;
+        const priceDifference = maxPrice / minPrice - 1;
+        console.log({ priceDifference });
 
         return {
-            isValid: maxShift > opportunityValue,
+            isValid: priceDifference >= opportunityThreshold,
             maxShift: maxShift,
         };
     }
