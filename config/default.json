@@ -1,14 +1,21 @@
 {
     "application": {
+        "netByPair": {
+            "ethUsdt": "arbitrumMainnet",
+            "zroUsdt": "optimismMainnet"
+        },
+        "opportunityThreshold": 0.0015,
+        "pairsToMonitor": ["ethUsdt", "zroUsdt"],
+        "priceTrackingInterval": {
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 5
+        },
+        "reportingInterval": { "hours": 4, "minutes": 0, "seconds": 0 },
         "urlByNet": {
             "arbitrumMainnet": "INFURA_URL_ARBITRUM_MAINNET",
             "optimismMainnet": "INFURA_URL_OPTIMISM_MAINNET",
             "mainnet": "INFURA_URL_MAINNET"
-        },
-        "pairsToMonitor": ["ethUsdt", "zroUsdt"],
-        "netByPair": {
-            "ethUsdt": "arbitrumMainnet",
-            "zroUsdt": "optimismMainnet"
         }
     },
     "exchanges": {
