@@ -30,6 +30,7 @@ class Main {
     }
 
     public bootstrap(): void {
+        console.log('⭐ application has been started...');
         try {
             this.startTrackPairs();
             this.startReporting();
