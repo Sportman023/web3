@@ -1380,7 +1380,7 @@
             },
             "zroUsdt": {
                 "symbol": "ZRO-USDT",
-                "token0Symbol": "ethToUsdt",
+                "token0Symbol": "zroToUsdt",
                 "token1Symbol": "usdtToZro"
             }
         }
