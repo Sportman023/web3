@@ -4,7 +4,7 @@
             "ethUsdt": "arbitrumMainnet",
             "zroUsdt": "optimismMainnet"
         },
-        "opportunityThreshold": 0.0015,
+        "opportunityThreshold": 0.002,
         "pairsToMonitor": ["ethUsdt", "zroUsdt"],
         "priceTrackingInterval": {
             "hours": 0,
