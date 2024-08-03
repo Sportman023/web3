@@ -1,36 +1,31 @@
 import 'dotenv/config';
 import { UniswapService } from './dex';
 import { OkxService, BinanceService } from './cex';
+import { GetPriceResult, Interval } from './types';
+import { ArbitrageOpportunityRepository } from './repositories';
 import { CSVBuilder } from './report/csvBuilder';
-import { TelegramBot } from './transport/telegram';
+import { TelegramClient } from './transport/telegram';
+import { PrismaClient } from "@prisma/client";
 import config from 'config';
 
-interface getPriceResult {
-    provider: string;
-    pair: string;
-    price: number;
-}
-
-interface interval {
-    hours: number;
-    minutes: number;
-    seconds: number;
-}
-
 class Main {
-    private readonly bot: TelegramBot;
+    private readonly bot: TelegramClient;
     private readonly reportBuilder: CSVBuilder;
+    private readonly arbitrageOpportunity: ArbitrageOpportunityRepository;
     private reportRecords: any[] = [];
     private appConfig: any;
 
     constructor() {
-        this.bot = new TelegramBot();
+        const prismaClient = new PrismaClient();
+        this.arbitrageOpportunity = new ArbitrageOpportunityRepository(prismaClient);
+        this.bot = new TelegramClient();
         this.reportBuilder = new CSVBuilder();
         this.appConfig = config.get('application');
     }
 
-    public bootstrap(): void {
+    public async bootstrap(): Promise<void> {
         console.log('⭐ application has been started...');
+
         try {
             this.startTrackPairs();
             this.startReporting();
@@ -77,6 +72,7 @@ class Main {
                 console.log({ pair, ethUsdtValues, valid });
 
                 if (valid.isValid) {
+                    // this.arbitrageOpportunity.create({}); // TODO: to impl
                     this.reportRecords.push({
                         results: [UNISWAP, BINANCE, OKX],
                         maxShift: valid.maxShift,
@@ -89,7 +85,7 @@ class Main {
         }, priceTrackingInterval);
     }
 
-    private async uniswap(pair: string): Promise<getPriceResult> {
+    private async uniswap(pair: string): Promise<GetPriceResult> {
         const uniswapConfig: any = config.get('exchanges.uniswap');
         const pairConfig: any = uniswapConfig[pair];
         const netName: string = this.appConfig.get('netByPair')[pair];
@@ -103,7 +99,7 @@ class Main {
         return result;
     }
 
-    private async binance(pair: string): Promise<getPriceResult> {
+    private async binance(pair: string): Promise<GetPriceResult> {
         const binanceConfig: any = config.get('exchanges.binance');
         const pairConfig: any = binanceConfig[pair];
 
@@ -115,7 +111,7 @@ class Main {
         return result;
     }
 
-    public async okx(pair: string): Promise<getPriceResult> {
+    public async okx(pair: string): Promise<GetPriceResult> {
         const okxConfig: any = config.get('exchanges.okx');
         const pairConfig: any = okxConfig[pair];
 
@@ -127,12 +123,12 @@ class Main {
         return result;
     }
 
-    private formatGetPriceResult(pairConfig: any, buyOneOfToken0: number, provider: string): getPriceResult {
+    private formatGetPriceResult(pairConfig: any, buyOneOfToken0: number, provider: string): GetPriceResult {
         const token0Symbol: string = pairConfig.get('token0Symbol');
         return { provider, pair: token0Symbol, price: buyOneOfToken0 };
     }
 
-    private getMillisecondsFromInterval(interval: interval): number {
+    private getMillisecondsFromInterval(interval: Interval): number {
         return interval.hours * 60 * 60 * 1000 + interval.minutes * 60 * 1000 + interval.seconds * 1000;
     }
 

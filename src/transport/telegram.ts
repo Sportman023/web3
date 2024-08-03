@@ -1,4 +1,4 @@
-export class TelegramBot {
+export class TelegramClient {
   private readonly baseUrl: string;
   private readonly token: string;
 
