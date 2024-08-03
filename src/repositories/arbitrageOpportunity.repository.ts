@@ -1,16 +1,13 @@
-import { ArbitrageOpportunity, PrismaClient } from '@prisma/client';
-import { CreateArbitrageOpportunityDto } from '../types';
+import { PrismaClient, ArbitrageOpportunity, Prisma } from '@prisma/client';
 
 export class ArbitrageOpportunityRepository {
-  private readonly prisma: PrismaClient;
+  constructor(private prisma: PrismaClient) {}
 
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
-  }
-
-  async create(data: any): Promise<ArbitrageOpportunity> {
+  async create(data: Prisma.ArbitrageOpportunityCreateInput): Promise<ArbitrageOpportunity> {
     return this.prisma.arbitrageOpportunity.create({ data });
   }
 
-
+  async update(id: number, data: Prisma.ArbitrageOpportunityUpdateInput): Promise<ArbitrageOpportunity> {
+    return this.prisma.arbitrageOpportunity.update({ where: { id }, data });
+  }
 }

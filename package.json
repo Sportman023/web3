@@ -16,6 +16,7 @@
     "@types/config": "^3.3.4",
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.14.14",
+    "prettier": "3.3.3",
     "prisma": "^5.17.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
@@ -28,7 +29,11 @@
     "config": "^3.3.12",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",
-    "ethers": "^6.13.1"
+    "ethers": "^6.13.1",
+    "fastify": "^4.28.1",
+    "fastify-plugin": "^4.5.1",
+    "pino-pretty": "^11.2.2",
+    "zod": "^3.23.8"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"

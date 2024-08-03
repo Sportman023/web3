@@ -1,10 +1,24 @@
+import { FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    telegram: TelegramClient;
+  }
+}
+
+const telegramPlugin: FastifyPluginAsync = fp(async (server) => {
+  console.log('1️⃣ registering telegram...');
+  const telegram = new TelegramClient();
+  server.decorate('telegram', telegram);
+});
+
 export class TelegramClient {
   private readonly baseUrl: string;
-  private readonly token: string;
 
   constructor() {
-    this.token = process.env.TELEGRAM_TOKEN as string;
-    this.baseUrl = `https://api.telegram.org/bot${this.token}`;
+    const token = String(process.env.TELEGRAM_TOKEN);
+    this.baseUrl = `https://api.telegram.org/bot${token}`;
   }
 
   async sendMessage(chatId: string, message: string) {
@@ -37,7 +51,7 @@ export class TelegramClient {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       if (!response.ok) {
@@ -52,3 +66,5 @@ export class TelegramClient {
     }
   }
 }
+
+export { telegramPlugin };

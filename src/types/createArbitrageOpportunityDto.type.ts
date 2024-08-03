@@ -1,1 +1,0 @@
-export type CreateArbitrageOpportunityDto = Record<any, any>;
