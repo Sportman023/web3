@@ -15,6 +15,10 @@ export class ExchangeRepository {
     return this.prisma.exchange.findUnique({ where: { id } });
   }
 
+  async findByName(name: string): Promise<Exchange | null> {
+    return this.prisma.exchange.findUnique({ where: { name } });
+  }
+
   async update(id: number, data: Prisma.ExchangeUpdateInput): Promise<Exchange> {
     return this.prisma.exchange.update({ where: { id }, data });
   }

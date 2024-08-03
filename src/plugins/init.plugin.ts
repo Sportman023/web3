@@ -6,22 +6,29 @@ import { OkxService, BinanceService } from '../services/cex';
 import { GetPriceResult, Interval } from '../types';
 import { CSVBuilder } from '../report/csvBuilder';
 import { TelegramClient } from './telegram.plugin';
+import { ArbitrageOpportunityService } from '../services';
+import { ArbitrageOpportunityRepository, ExchangeRepository } from '../repositories';
+import { PrismaClient } from '@prisma/client';
 
 const initPlugin: FastifyPluginAsync = fp(async (fastify) => {
   console.log('3️⃣ registering init app...');
-  new InitContainer(fastify.telegram).bootstrap();
+  new InitContainer(fastify.telegram, new CSVBuilder(), fastify.prisma).bootstrap();
 });
 
 class InitContainer {
-  private readonly reportBuilder: CSVBuilder;
-  private readonly telegram: TelegramClient;
   private reportRecords: any[] = [];
-  private appConfig: any;
+  private appConfig: any = config.get('application');
+  private arbitrageService: ArbitrageOpportunityService;
 
-  constructor(telegram: TelegramClient) {
-    this.telegram = telegram;
-    this.reportBuilder = new CSVBuilder();
-    this.appConfig = config.get('application');
+  constructor(
+    private telegram: TelegramClient,
+    private reportBuilder: CSVBuilder,
+    private prisma: PrismaClient
+  ) {
+    this.arbitrageService = new ArbitrageOpportunityService(
+      new ArbitrageOpportunityRepository(this.prisma),
+      new ExchangeRepository(this.prisma)
+    );
   }
 
   public async bootstrap(): Promise<void> {
@@ -65,15 +72,21 @@ class InitContainer {
         promises.push(this.binance(pair));
         promises.push(this.okx(pair));
         const [uniswap, binance, okx] = await Promise.all(promises);
-        const ethUsdtValues = [uniswap['price'], binance['price'], okx['price']];
-        const valid = this.validateOpportunity(ethUsdtValues);
+        const exchangeValues = [uniswap, binance, okx];
+        const valid = this.validateOpportunity(exchangeValues);
 
         if (valid.isValid) {
-          this.reportRecords.push({
+          const currentTime = new Date().toISOString();
+
+          const createdResult = await this.arbitrageService.createArbitrageOpportunity({ ...valid, currentTime });
+          console.log(createdResult);
+
+          const payload = {
             results: [uniswap, binance, okx],
             maxShift: valid.maxShift,
-            currentTime: new Date().toISOString(),
-          });
+            currentTime: currentTime,
+          }
+          this.reportRecords.push(payload);
         }
       }
 
@@ -128,27 +141,34 @@ class InitContainer {
     return interval.hours * 60 * 60 * 1000 + interval.minutes * 60 * 1000 + interval.seconds * 1000;
   }
 
-  private validateOpportunity(ethUsdtValues: number[]) {
+  private validateOpportunity(values: GetPriceResult[]) {
     const opportunityThreshold = this.appConfig.get('opportunityThreshold');
 
-    let maxPrice = ethUsdtValues[0];
-    let minPrice = ethUsdtValues[0];
+    let maxExchanger = { ...values[0] };
+    let minExchanger = { ...values[0] };
 
-    ethUsdtValues.forEach((value) => {
-      if (value > maxPrice) {
-        maxPrice = value;
+    console.log({maxExchanger, minExchanger});
+    
+
+    values.forEach((value: GetPriceResult) => {
+      if (value.price > maxExchanger.price) {
+        maxExchanger.price = value.price;
+        maxExchanger.provider = value.provider;
       }
-      if (value < minPrice) {
-        minPrice = value;
+      if (value.price < minExchanger.price) {
+        minExchanger.price = value.price;
+        minExchanger.provider = value.provider
       }
     });
 
-    const maxShift = maxPrice - minPrice;
-    const priceDifference = maxPrice / minPrice - 1;
+    const maxShift = maxExchanger.price - minExchanger.price;
+    const priceDifference = maxExchanger.price / minExchanger.price - 1;
 
     return {
       isValid: priceDifference >= opportunityThreshold,
       maxShift: maxShift,
+      potentialSellExchange: maxExchanger.provider,
+      potentialBuyExchange: minExchanger.provider
     };
   }
 }
