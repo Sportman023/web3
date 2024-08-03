@@ -8,8 +8,8 @@
         "pairsToMonitor": ["ethUsdt", "zroUsdt"],
         "priceTrackingInterval": {
             "hours": 0,
-            "minutes": 3,
-            "seconds": 0
+            "minutes": 0,
+            "seconds": 10
         },
         "reportingInterval": { "hours": 4, "minutes": 0, "seconds": 0 },
         "urlByNet": {

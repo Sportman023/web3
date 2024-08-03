@@ -15,9 +15,10 @@
   "devDependencies": {
     "@types/config": "^3.3.4",
     "@types/crypto-js": "^4.2.2",
-    "@types/node": "^20.11.17",
+    "@types/node": "^20.14.14",
+    "prisma": "^5.17.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.5.4"
   },
   "dependencies": {
     "@dedust/sdk": "^0.8.7",
@@ -27,5 +28,8 @@
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.1"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
   }
 }

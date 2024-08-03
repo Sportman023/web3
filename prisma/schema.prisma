@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Exchange {
+  id            Int       @id @default(autoincrement())
+  name          String    @unique
+  apiKey        String?
+  apiSecret     String?
+  status        String    // 'active' or 'inactive'
+  tradingPairs  TradingPair[]
+  transactions  Transaction[]
+  buyArbitrageOpportunities   ArbitrageOpportunity[] @relation("BuyExchange")
+  sellArbitrageOpportunities  ArbitrageOpportunity[] @relation("SellExchange")
+}
+
+model Cryptocurrency {
+  id             Int       @id @default(autoincrement())
+  symbol         String    @unique
+  name           String
+  decimalPlaces  Int
+  basePairs      TradingPair[] @relation("BaseCurrency")
+  quotePairs     TradingPair[] @relation("QuoteCurrency")
+  userBalances   UserBalance[]
+}
+
+model TradingPair {
+  id              Int       @id @default(autoincrement())
+  baseCurrency    Cryptocurrency @relation("BaseCurrency", fields: [baseCurrencyId], references: [id])
+  baseCurrencyId  Int
+  quoteCurrency   Cryptocurrency @relation("QuoteCurrency", fields: [quoteCurrencyId], references: [id])
+  quoteCurrencyId Int
+  exchange        Exchange  @relation(fields: [exchangeId], references: [id])
+  exchangeId      Int
+  minOrderSize    Float
+  maxOrderSize    Float
+  tradingFee      Float
+  orderBooks      OrderBook[]
+  transactions    Transaction[]
+  arbitrageOpportunities ArbitrageOpportunity[]
+}
+
+model OrderBook {
+  id            Int       @id @default(autoincrement())
+  tradingPair   TradingPair @relation(fields: [tradingPairId], references: [id])
+  tradingPairId Int
+  timestamp     DateTime
+  bidPrice      Float
+  bidVolume     Float
+  askPrice      Float
+  askVolume     Float
+}
+
+model ArbitrageOpportunity {
+  id                Int       @id @default(autoincrement())
+  timestamp         DateTime
+  buyExchange       Exchange  @relation("BuyExchange", fields: [buyExchangeId], references: [id])
+  buyExchangeId     Int
+  sellExchange      Exchange  @relation("SellExchange", fields: [sellExchangeId], references: [id])
+  sellExchangeId    Int
+  tradingPair       TradingPair @relation(fields: [tradingPairId], references: [id])
+  tradingPairId     Int
+  profitPercentage  Float
+  volume            Float
+}
+
+model Transaction {
+  id            Int       @id @default(autoincrement())
+  timestamp     DateTime
+  exchange      Exchange  @relation(fields: [exchangeId], references: [id])
+  exchangeId    Int
+  tradingPair   TradingPair @relation(fields: [tradingPairId], references: [id])
+  tradingPairId Int
+  type          String    // 'buy' or 'sell'
+  price         Float
+  volume        Float
+  fee           Float
+  status        String    // 'pending', 'completed', or 'failed'
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique
+  email         String    @unique
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  lastLogin     DateTime?
+  balances      UserBalance[]
+}
+
+model UserBalance {
+  id               Int       @id @default(autoincrement())
+  user             User      @relation(fields: [userId], references: [id])
+  userId           Int
+  cryptocurrency   Cryptocurrency @relation(fields: [cryptocurrencyId], references: [id])
+  cryptocurrencyId Int
+  balance          Float
+  lastUpdated      DateTime
+
+  @@unique([userId, cryptocurrencyId])
+}

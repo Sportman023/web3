@@ -1,9 +1,6 @@
 export class CSVBuilder {
     public prepareDocument(jsonArray: any[]) {
         if (jsonArray.length === 0) return '';
-
-        const allPairs = new Set();
-        const exchanges = new Set();
         let csv = '';
 
         const headers = ['Provider', 'Pair', 'Price', 'Time'];
