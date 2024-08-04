@@ -3,12 +3,13 @@ import fp from 'fastify-plugin';
 import config from 'config';
 import { UniswapService } from '../services/dex';
 import { OkxService, BinanceService } from '../services/cex';
-import { GetPriceResult, Interval } from '../types';
+import { GetPriceResult } from '../types';
 import { CSVBuilder } from '../report/csvBuilder';
 import { TelegramClient } from './telegram.plugin';
 import { ArbitrageOpportunityService } from '../services';
-import { ArbitrageOpportunityRepository, ExchangeRepository } from '../repositories';
+import { ArbitrageOpportunityRepository, ExchangeRepository, TradingPairRepository } from '../repositories';
 import { PrismaClient } from '@prisma/client';
+import { getMillisecondsFromInterval } from '../utils/main.util';
 
 const initPlugin: FastifyPluginAsync = fp(async (fastify) => {
   console.log('3️⃣ registering init app...');
@@ -27,13 +28,14 @@ class InitContainer {
   ) {
     this.arbitrageService = new ArbitrageOpportunityService(
       new ArbitrageOpportunityRepository(this.prisma),
-      new ExchangeRepository(this.prisma)
+      new ExchangeRepository(this.prisma),
+      new TradingPairRepository(this.prisma)
     );
   }
 
   public async bootstrap(): Promise<void> {
     try {
-      this.startTrackPairs();
+      this.startArbitrationProcess();
       this.startReporting();
     } catch (e) {
       console.log(e);
@@ -43,7 +45,7 @@ class InitContainer {
   public startReporting() {
     const chatIds = process.env.TELEGRAM_CHAT_IDS as string;
     const ids = chatIds.split(',');
-    const reportingInterval = this.getMillisecondsFromInterval(this.appConfig.get('reportingInterval'));
+    const reportingInterval = getMillisecondsFromInterval(this.appConfig.get('reportingInterval'));
     setInterval(async () => {
       if (!this.reportRecords.length) {
         ids.forEach(async (chatId) => {
@@ -59,8 +61,10 @@ class InitContainer {
     }, reportingInterval);
   }
 
-  public startTrackPairs() {
-    const priceTrackingInterval = this.getMillisecondsFromInterval(this.appConfig.get('priceTrackingInterval'));
+  public async startArbitrationProcess() {
+    const priceTrackingInterval = getMillisecondsFromInterval(this.appConfig.get('priceTrackingInterval'));
+    const activeExchanges = await this.prisma.exchange.findMany({ where: { status: 'active' } });
+    const tradingPairs = await this.prisma.tradingPair.findMany();
 
     setInterval(async () => {
       console.log('🎬', new Date().toISOString());
@@ -78,8 +82,8 @@ class InitContainer {
         if (valid.isValid) {
           const currentTime = new Date().toISOString();
 
-          const createdResult = await this.arbitrageService.createArbitrageOpportunity({ ...valid, currentTime });
-          console.log(createdResult);
+          // const createdResult = await this.arbitrageService.createArbitrageOpportunity({ ...valid, currentTime });
+          // console.log(createdResult);
 
           const payload = {
             results: [uniswap, binance, okx],
@@ -137,18 +141,11 @@ class InitContainer {
     return { provider, pair: token0Symbol, price: buyOneOfToken0 };
   }
 
-  private getMillisecondsFromInterval(interval: Interval): number {
-    return interval.hours * 60 * 60 * 1000 + interval.minutes * 60 * 1000 + interval.seconds * 1000;
-  }
-
   private validateOpportunity(values: GetPriceResult[]) {
     const opportunityThreshold = this.appConfig.get('opportunityThreshold');
 
     let maxExchanger = { ...values[0] };
     let minExchanger = { ...values[0] };
-
-    console.log({maxExchanger, minExchanger});
-    
 
     values.forEach((value: GetPriceResult) => {
       if (value.price > maxExchanger.price) {
@@ -174,3 +171,57 @@ class InitContainer {
 }
 
 export { initPlugin };
+
+
+// 1. Set up Exchanges: +
+
+// Create Exchange records for each cryptocurrency exchange you want to work with.
+// Set the status to 'active' for exchanges you want to use.
+
+
+// 2. Add Cryptocurrencies:
+
+// Create Cryptocurrency records for all the cryptocurrencies you want to track.
+// Ensure to set the correct symbol, name, and decimalPlaces for each.
+
+
+// 3. Define Trading Pairs:
+
+// Create TradingPair records for each combination of cryptocurrencies you want to trade.
+// Link each TradingPair to its respective Exchange, baseCurrency, and quoteCurrency.
+// Set minOrderSize, maxOrderSize, and tradingFee for each pair.
+
+
+// 4. Update Order Books:
+
+// Regularly fetch and update OrderBook records for each TradingPair.
+// This will give you current market prices and volumes.
+
+// 5. Identify Arbitrage Opportunities:
+
+// Analyze OrderBook data across different exchanges to find price discrepancies.
+// When an opportunity is found, create an ArbitrageOpportunity record.
+
+
+// 6. Execute Transactions:
+
+// Based on identified opportunities, create Transaction records.
+// Update the status of transactions as they progress (pending -> completed or failed).
+
+
+// 7. Manage Users:
+
+// Create User records for individuals using your system.
+// Keep track of their login activity.
+
+
+// 8. Track User Balances:
+
+// Create and update UserBalance records to keep track of each user's cryptocurrency holdings.
+
+// Continuous Monitoring and Updating:
+
+// Regularly update OrderBook data.
+// Look for new arbitrage opportunities.
+// Execute transactions when profitable.
+// Update user balances after successful transactions.

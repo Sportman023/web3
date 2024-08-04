@@ -1,11 +1,10 @@
 import { Exchange, Prisma } from '@prisma/client';
-import { ExchangeRepository } from '../repositories/exchange.repository';
+import { ExchangeRepository } from '../repositories';
 
 export class ExchangeService {
   constructor(private exchangeRepository: ExchangeRepository) {}
 
   async createExchange(data: Prisma.ExchangeCreateInput): Promise<Exchange> {
-    // Add any business logic here
     return this.exchangeRepository.create(data);
   }
 

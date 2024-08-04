@@ -10,6 +10,7 @@ export const createExchangeSchema = z.object({
   name: z.string().min(1).max(255),
   apiKey: z.string().nullable(),
   apiSecret: z.string().nullable(),
+  passphrase: z.string().nullable(),
   status: z.nativeEnum(ExchangeStatusType)
 }) satisfies z.ZodType<Prisma.ExchangeCreateInput>;
 

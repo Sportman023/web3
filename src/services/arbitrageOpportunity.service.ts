@@ -1,15 +1,17 @@
 import { ArbitrageOpportunity, Prisma } from '@prisma/client';
-import { ArbitrageOpportunityRepository, ExchangeRepository } from '../repositories';
+import { ArbitrageOpportunityRepository, ExchangeRepository, TradingPairRepository } from '../repositories';
 
 export class ArbitrageOpportunityService {
   constructor(
     private arbitrageOpportunityRepo: ArbitrageOpportunityRepository,
-    private exchangeRepo: ExchangeRepository
+    private exchangeRepo: ExchangeRepository,
+    private tradingPairRepo: TradingPairRepository
   ) {}
 
   async createArbitrageOpportunity(data: Record<string, any>): Promise<ArbitrageOpportunity> {
     const potentialSellExchange = await this.exchangeRepo.findByName(data.potentialSellExchange);
     const potentialBuyExchange = await this.exchangeRepo.findByName(data.potentialBuyExchange);
+    const tradingPair = await this.tradingPairRepo.findByNameAndExchangeId(data.pair, potentialSellExchange?.id);
 
     const opportunityItem: Prisma.ArbitrageOpportunityCreateInput = {
       timestamp: data.currentTime,
@@ -21,7 +23,7 @@ export class ArbitrageOpportunityService {
         connect: { id: potentialSellExchange?.id }
       },
       tradingPair: {
-        connect: undefined // TODO: add pair
+        connect: { id: tradingPair?.id }
       },
       volume: 100
     }

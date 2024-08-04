@@ -4,7 +4,7 @@ import { ZodError } from 'zod';
 
 const zodPlugin: FastifyPluginAsync = fp(async (fastify) => {
   console.log('4️⃣ registering zod...');
-  
+
   fastify.setValidatorCompiler((x: any) => {
     return (data) => {
       try {

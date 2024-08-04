@@ -12,11 +12,13 @@ model Exchange {
   name          String    @unique
   apiKey        String?
   apiSecret     String?
+  passphrase    String?
   status        String    // 'active' or 'inactive'
   tradingPairs  TradingPair[]
   transactions  Transaction[]
   buyArbitrageOpportunities   ArbitrageOpportunity[] @relation("BuyExchange")
   sellArbitrageOpportunities  ArbitrageOpportunity[] @relation("SellExchange")
+  balances      ExchangeBalance[]
 }
 
 model Cryptocurrency {
@@ -26,11 +28,12 @@ model Cryptocurrency {
   decimalPlaces  Int
   basePairs      TradingPair[] @relation("BaseCurrency")
   quotePairs     TradingPair[] @relation("QuoteCurrency")
-  userBalances   UserBalance[]
+  exchangeBalances ExchangeBalance[]
 }
 
 model TradingPair {
   id              Int       @id @default(autoincrement())
+  name            String
   baseCurrency    Cryptocurrency @relation("BaseCurrency", fields: [baseCurrencyId], references: [id])
   baseCurrencyId  Int
   quoteCurrency   Cryptocurrency @relation("QuoteCurrency", fields: [quoteCurrencyId], references: [id])
@@ -40,20 +43,19 @@ model TradingPair {
   minOrderSize    Float
   maxOrderSize    Float
   tradingFee      Float
-  orderBooks      OrderBook[]
+  latestPrice     LatestPrice?
   transactions    Transaction[]
   arbitrageOpportunities ArbitrageOpportunity[]
 }
 
-model OrderBook {
+model LatestPrice {
   id            Int       @id @default(autoincrement())
   tradingPair   TradingPair @relation(fields: [tradingPairId], references: [id])
-  tradingPairId Int
+  tradingPairId Int       @unique
   timestamp     DateTime
+  lastPrice     Float
   bidPrice      Float
-  bidVolume     Float
   askPrice      Float
-  askVolume     Float
 }
 
 model ArbitrageOpportunity {
@@ -67,6 +69,7 @@ model ArbitrageOpportunity {
   tradingPairId     Int
   profitPercentage  Float
   volume            Float
+  status            String    // 'identified', 'executed', 'completed', 'failed'
 }
 
 model Transaction {
@@ -81,26 +84,17 @@ model Transaction {
   volume        Float
   fee           Float
   status        String    // 'pending', 'completed', or 'failed'
+  arbitrageOpportunityId Int?
 }
 
-model User {
-  id            Int       @id @default(autoincrement())
-  username      String    @unique
-  email         String    @unique
-  passwordHash  String
-  createdAt     DateTime  @default(now())
-  lastLogin     DateTime?
-  balances      UserBalance[]
-}
-
-model UserBalance {
+model ExchangeBalance {
   id               Int       @id @default(autoincrement())
-  user             User      @relation(fields: [userId], references: [id])
-  userId           Int
+  exchange         Exchange  @relation(fields: [exchangeId], references: [id])
+  exchangeId       Int
   cryptocurrency   Cryptocurrency @relation(fields: [cryptocurrencyId], references: [id])
   cryptocurrencyId Int
   balance          Float
   lastUpdated      DateTime
 
-  @@unique([userId, cryptocurrencyId])
+  @@unique([exchangeId, cryptocurrencyId])
 }

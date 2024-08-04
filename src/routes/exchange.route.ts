@@ -39,6 +39,7 @@ const exchangeRoutes: FastifyPluginAsync = async (fastify) => {
       body: updateExchangeSchema,
     },
   }, async (request, reply) => {
+    console.log(request.body);
     const exchange = await exchangeService.updateExchange(parseInt(request.params.id, 10), request.body);
     reply.send(exchange);
   });

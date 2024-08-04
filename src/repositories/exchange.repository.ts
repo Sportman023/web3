@@ -19,6 +19,10 @@ export class ExchangeRepository {
     return this.prisma.exchange.findUnique({ where: { name } });
   }
 
+  async findActive(): Promise<Exchange[]> {
+    return this.prisma.exchange.findMany({ where: { status: 'active' } });
+  }
+
   async update(id: number, data: Prisma.ExchangeUpdateInput): Promise<Exchange> {
     return this.prisma.exchange.update({ where: { id }, data });
   }
