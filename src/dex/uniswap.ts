@@ -1,18 +1,32 @@
 import { ethers, formatUnits } from 'ethers';
+// import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
+import SwapRouterABI from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json'; //TODO: to replace by abi json file
+import ERC20ABI from '../../config/erc20abi.json';
+
+const WALLET_ADDRESS = process.env.WALLET_ADDRESS;
+const WALLET_PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY as string;
+
+const UniversalRouterV1_2 = '0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD'; //sepolia
+
+const universalRouterContractAddress = '0xEf1c6E67703c7BD7107eed8303Fbe6EC2554BF6B';
 
 export class UniswapService {
-    private pairConfig: any;
-    private provider: any;
-    private contract: any;
     private netUrl: string;
     private netName: string;
+    private pairConfig: any;
+    private poolContract: ethers.Contract;
+    private provider: ethers.JsonRpcProvider;
+    private swapRouterContract: ethers.Contract;
 
     constructor(netName: string, netUrlName: string, pairConfig: any) {
         this.netName = netName;
         this.netUrl = process.env[netUrlName] as string;
 
         this.pairConfig = pairConfig;
-        this.setupContract();
+
+        this.provider = new ethers.JsonRpcProvider(this.netUrl);
+        this.poolContract = new ethers.Contract(this.pairConfig.get('contractAddress')[this.netName], this.pairConfig.get('abi'), this.provider);
+        this.swapRouterContract = new ethers.Contract(universalRouterContractAddress, SwapRouterABI.abi, this.provider);
     }
 
     public async getPrice(): Promise<{
@@ -20,7 +34,7 @@ export class UniswapService {
         buyOneOfToken1: number;
     }> {
         const transactionGasFee: number = await this.getGasPrice();
-        const slot0 = await this.contract.slot0();
+        const slot0 = await this.poolContract.slot0();
         const sqrtPriceX96 = Number(slot0.sqrtPriceX96);
 
         const { token0Decimals, token1Decimals } = this.pairConfig;
@@ -55,8 +69,50 @@ export class UniswapService {
         return (gasPrice + maxPriorityFeePerGas) * swapGasLimit;
     }
 
-    private async setupContract(): Promise<void> {
-        this.provider = new ethers.JsonRpcProvider(this.netUrl);
-        this.contract = new ethers.Contract(this.pairConfig.get('contractAddress')[this.netName], this.pairConfig.get('abi'), this.provider);
+    public async swapToken(token0AmountDec: number, token1AmountDec: number, isToken0: boolean): Promise<void> {
+        const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, this.provider);
+        const connectedWallet = wallet.connect(this.provider);
+
+        const [token0, token1, fee] = await Promise.all([this.poolContract.token0(), this.poolContract.token1(), this.poolContract.fee()]);
+
+        const { token0Decimals, token1Decimals } = this.pairConfig;
+
+        const token0Amount = ethers.parseUnits(token0AmountDec.toString(), token0Decimals);
+        const token1Amount = ethers.parseUnits(token1AmountDec.toString(), token0Decimals);
+
+        const amountIn = isToken0 ? token0Amount : token1Amount;
+        const amountOut = isToken0 ? token1Amount : token0Amount;
+
+        const tokenIn = isToken0 ? token1 : token0;
+        const tokenOut = isToken0 ? token0 : token1;
+
+        const approvalAmount = amountIn;
+
+        const tokenContract = new ethers.Contract(token0, ERC20ABI, connectedWallet);
+
+        const allowance = await tokenContract.allowance(WALLET_ADDRESS, universalRouterContractAddress);
+
+        if (allowance.lt(approvalAmount)) {
+            const approveTx = await tokenContract.approve(universalRouterContractAddress, approvalAmount);
+            console.log({ approveTx });
+        }
+
+        const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from the current Unix time
+
+        const tx = await this.swapRouterContract.exactInputSingle(
+            {
+                tokenIn,
+                tokenOut,
+                fee,
+                recipient: WALLET_ADDRESS,
+                deadline,
+                amountIn,
+                amountOutMinimum: amountOut,
+                sqrtPriceLimitX96: 0,
+            },
+            { gasLimit: 1000000, gasPrice: 1000000000 } //TODO: to replace by gas limit and gas price
+        );
+
+        console.log({ tx });
     }
 }
