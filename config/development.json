@@ -1,11 +1,10 @@
 {
   "application": {
     "netByPair": {
-      "ethUsdt": "arbitrumMainnet",
-      "zroUsdt": "optimismMainnet"
+      "ETHUSDT": "arbitrumMainnet",
+      "ZROUSDT": "optimismMainnet"
     },
     "opportunityThreshold": 0.0015,
-    "pairsToMonitor": ["ethUsdt", "zroUsdt"],
     "priceTrackingInterval": {
       "hours": 0,
       "minutes": 5,
@@ -20,7 +19,7 @@
   },
   "exchanges": {
     "uniswap": {
-      "ethUsdt": {
+      "ETHUSDT": {
         "contractAddress": {
           "mainnet": "0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36",
           "arbitrumMainnet": "0xc82819F72A9e77E2c0c3A69B3196478f44303cf4"
@@ -1000,7 +999,7 @@
         "token0Symbol": "ethToUsdt",
         "token1Symbol": "usdtToEth"
       },
-      "zroUsdt": {
+      "ZROUSDT": {
         "contractAddress": {
           "optimismMainnet": "0xd9dD34576c7034BEB0B11a99aFFfC49e91011235"
         },
@@ -1395,12 +1394,12 @@
     "binance": {
       "baseUrl": "https://api.binance.com",
       "getPricePath": "/api/v3/ticker/price",
-      "ethUsdt": {
+      "ETHUSDT": {
         "symbol": "ETHUSDT",
         "token0Symbol": "ethToUsdt",
         "token1Symbol": "usdtToEth"
       },
-      "zroUsdt": {
+      "ZROUSDT": {
         "symbol": "ZROUSDT",
         "token0Symbol": "zroToUsdt",
         "token1Symbol": "usdtToZro"
@@ -1409,12 +1408,12 @@
     "okx": {
       "baseUrl": "https://www.okx.com",
       "getPricePath": "/api/v5/public/mark-price?instType=SWAP",
-      "ethUsdt": {
+      "ETHUSDT": {
         "symbol": "ETH-USDT",
         "token0Symbol": "ethToUsdt",
         "token1Symbol": "usdtToEth"
       },
-      "zroUsdt": {
+      "ZROUSDT": {
         "symbol": "ZRO-USDT",
         "token0Symbol": "zroToUsdt",
         "token1Symbol": "usdtToZro"

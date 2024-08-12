@@ -34,6 +34,7 @@ model Cryptocurrency {
 model TradingPair {
   id              Int       @id @default(autoincrement())
   name            String
+  status          String
   baseCurrency    Cryptocurrency @relation("BaseCurrency", fields: [baseCurrencyId], references: [id])
   baseCurrencyId  Int
   quoteCurrency   Cryptocurrency @relation("QuoteCurrency", fields: [quoteCurrencyId], references: [id])
@@ -43,19 +44,7 @@ model TradingPair {
   minOrderSize    Float
   maxOrderSize    Float
   tradingFee      Float
-  latestPrice     LatestPrice?
   transactions    Transaction[]
-  arbitrageOpportunities ArbitrageOpportunity[]
-}
-
-model LatestPrice {
-  id            Int       @id @default(autoincrement())
-  tradingPair   TradingPair @relation(fields: [tradingPairId], references: [id])
-  tradingPairId Int       @unique
-  timestamp     DateTime
-  lastPrice     Float
-  bidPrice      Float
-  askPrice      Float
 }
 
 model ArbitrageOpportunity {
@@ -65,8 +54,7 @@ model ArbitrageOpportunity {
   buyExchangeId     Int
   sellExchange      Exchange  @relation("SellExchange", fields: [sellExchangeId], references: [id])
   sellExchangeId    Int
-  tradingPair       TradingPair @relation(fields: [tradingPairId], references: [id])
-  tradingPairId     Int
+  tradingPairName   String
   profitPercentage  Float
   volume            Float
   status            String    // 'identified', 'executed', 'completed', 'failed'

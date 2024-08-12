@@ -1,8 +1,30 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+async function clearDatabase() {
+  try {
+    // Delete all trading pairs
+    await prisma.tradingPair.deleteMany();
+    console.log('All trading pairs deleted');
+
+    // Delete all cryptocurrencies
+    await prisma.cryptocurrency.deleteMany();
+    console.log('All cryptocurrencies deleted');
+
+    // Add more deleteMany operations here for any other tables you want to clear
+    // For example:
+    // await prisma.someOtherTable.deleteMany();
+
+    console.log('Database cleared successfully (excluding Exchanges)');
+  } catch (error) {
+    console.error('Error clearing database:', error);
+  }
+}
+
 async function main() {
   try {
+
+    await clearDatabase();
     // Create exchanges
     let exchanges = await prisma.exchange.findMany();
 
@@ -10,9 +32,6 @@ async function main() {
 
     // Create cryptocurrencies
     const cryptocurrencies = await Promise.all([
-      prisma.cryptocurrency.create({
-        data: { symbol: 'BTC', name: 'Bitcoin', decimalPlaces: 8 }
-      }),
       prisma.cryptocurrency.create({
         data: { symbol: 'ETH', name: 'Ethereum', decimalPlaces: 18 }
       }),
@@ -36,7 +55,8 @@ async function main() {
         if (baseCurrency.symbol !== 'USDT') {
           const pair = await prisma.tradingPair.create({
             data: {
-              name: `${baseCurrency.symbol}/USDT`,
+              name: `${baseCurrency.symbol}USDT`,
+              status: 'active',
               exchange: { connect: { id: exchange.id } },
               baseCurrency: { connect: { id: baseCurrency.id } },
               quoteCurrency: { connect: { id: usdt.id } },
@@ -51,31 +71,6 @@ async function main() {
     }
 
     console.log('Trading pairs created:', tradingPairs.map(tp => `${tp.name} on ${exchanges.find(e => e.id === tp.exchangeId).name}`));
-
-    // Create some sample latest prices
-    for (const pair of tradingPairs) {
-      let basePrice;
-      switch (pair.name.split('/')[0]) {
-        case 'BTC': basePrice = 30000; break;
-        case 'ETH': basePrice = 2000; break;
-        case 'XRP': basePrice = 0.5; break;
-        case 'LTC': basePrice = 100; break;
-        default: basePrice = 1;
-      }
-      
-      const lastPrice = basePrice + (Math.random() - 0.5) * basePrice * 0.01; // +/- 0.5%
-      await prisma.latestPrice.create({
-        data: {
-          tradingPair: { connect: { id: pair.id } },
-          timestamp: new Date(),
-          lastPrice: lastPrice,
-          bidPrice: lastPrice * 0.9995, // 0.05% below last price
-          askPrice: lastPrice * 1.0005 // 0.05% above last price
-        }
-      });
-    }
-
-    console.log('Sample latest prices created for all trading pairs');
 
   } catch (error) {
     console.error('Error in populating data:', error);

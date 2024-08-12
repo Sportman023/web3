@@ -1,4 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
+const util = require('node:util');
+
 const prisma = new PrismaClient();
 
 async function getAllData() {
@@ -8,14 +10,13 @@ async function getAllData() {
         tradingPairs: {
           include: {
             baseCurrency: true,
-            quoteCurrency: true,
-            latestPrice: true
+            quoteCurrency: true
           }
         }
       }
     });
 
-    console.log(JSON.stringify(allData, null, 2));
+    console.log(util.inspect(allData, { showHidden: true, depth: null, colors: true })); 
     return allData;
   } catch (error) {
     console.error('Error fetching data:', error);

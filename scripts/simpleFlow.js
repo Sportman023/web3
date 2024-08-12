@@ -23,24 +23,6 @@ async function main() {
       for (const exchange of exchanges) {
         for (const pair of tradingPairs) {
           const prices = await fetchPrices(exchange, pair);
-
-          // Update latest price
-          await prisma.latestPrice.upsert({
-            where: { tradingPairId: pair.id },
-            update: {
-              timestamp: new Date(),
-              lastPrice: (prices.bid + prices.ask) / 2,
-              bidPrice: prices.bid,
-              askPrice: prices.ask
-            },
-            create: {
-              tradingPairId: pair.id,
-              timestamp: new Date(),
-              lastPrice: (prices.bid + prices.ask) / 2,
-              bidPrice: prices.bid,
-              askPrice: prices.ask
-            }
-          });
         }
       }
 

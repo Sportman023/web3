@@ -7,7 +7,7 @@ import { GetPriceResult } from '../types';
 import { CSVBuilder } from '../report/csvBuilder';
 import { TelegramClient } from './telegram.plugin';
 import { ArbitrageOpportunityService } from '../services';
-import { ArbitrageOpportunityRepository, ExchangeRepository, TradingPairRepository } from '../repositories';
+import { ArbitrageOpportunityRepository } from '../repositories';
 import { PrismaClient } from '@prisma/client';
 import { getMillisecondsFromInterval } from '../utils/main.util';
 
@@ -27,9 +27,7 @@ class InitContainer {
     private prisma: PrismaClient
   ) {
     this.arbitrageService = new ArbitrageOpportunityService(
-      new ArbitrageOpportunityRepository(this.prisma),
-      new ExchangeRepository(this.prisma),
-      new TradingPairRepository(this.prisma)
+      new ArbitrageOpportunityRepository(this.prisma)
     );
   }
 
@@ -63,34 +61,62 @@ class InitContainer {
 
   public async startArbitrationProcess() {
     const priceTrackingInterval = getMillisecondsFromInterval(this.appConfig.get('priceTrackingInterval'));
-    const activeExchanges = await this.prisma.exchange.findMany({ where: { status: 'active' } });
-    const tradingPairs = await this.prisma.tradingPair.findMany();
+    const tradingPairs = await this.prisma.tradingPair.findMany({
+      where: {
+        AND: [
+          { status: 'active' },
+          {
+            exchange: {
+              status: 'active'
+            }
+          }
+        ]
+      },
+      include: {
+        exchange: true
+      }
+    });
 
     setInterval(async () => {
       console.log('🎬', new Date().toISOString());
-      const pairsToMonitor = this.appConfig.pairsToMonitor;
 
-      for (const pair of pairsToMonitor) {
-        const promises: Promise<any>[] = [];
-        promises.push(this.uniswap(pair));
-        promises.push(this.binance(pair));
-        promises.push(this.okx(pair));
-        const [uniswap, binance, okx] = await Promise.all(promises);
-        const exchangeValues = [uniswap, binance, okx];
-        const valid = this.validateOpportunity(exchangeValues);
+      const tradingPairByPair: Record<string, any[]> = {};
+
+      for (const tradingPair of tradingPairs) {
+        if (tradingPairByPair[tradingPair.name]) {
+          const exchanges = tradingPairByPair[tradingPair.name];
+          exchanges.push(tradingPair);
+        } else {
+          tradingPairByPair[tradingPair.name] = [tradingPair];
+        }
+      }
+
+      for (const pair of Object.keys(tradingPairByPair)) {
+        const tradingPairs = tradingPairByPair[pair];
+        const promises: Promise<GetPriceResult>[] = [];
+        for (const tradingPair of tradingPairs) {
+          const func = this.functionMap[tradingPair.exchange.name.toLowerCase()];
+          if (func) {
+            const result = func(pair);
+            promises.push(result);
+          }
+        }
+
+        const result = await Promise.all(promises);
+        const valid = this.validateOpportunity(result);
 
         if (valid.isValid) {
           const currentTime = new Date().toISOString();
-
-          // const createdResult = await this.arbitrageService.createArbitrageOpportunity({ ...valid, currentTime });
-          // console.log(createdResult);
-
-          const payload = {
-            results: [uniswap, binance, okx],
-            maxShift: valid.maxShift,
-            currentTime: currentTime,
-          }
-          this.reportRecords.push(payload);
+          const potentialBuyExchangeId = tradingPairs.find(tradingPair => tradingPair.exchange.name === valid.potentialBuyExchange)?.exchangeId;
+          const potentialSellExchangeId = tradingPairs.find(tradingPair => tradingPair.exchange.name === valid.potentialSellExchange)?.exchangeId;
+          const createdResult = await this.arbitrageService.createArbitrageOpportunity({
+            ...valid,
+            currentTime,
+            potentialBuyExchangeId,
+            potentialSellExchangeId,
+            pair
+          });
+          console.log(createdResult);
         }
       }
 
@@ -98,7 +124,7 @@ class InitContainer {
     }, priceTrackingInterval);
   }
 
-  private async uniswap(pair: string): Promise<GetPriceResult> {
+  private uniswap = async (pair: string): Promise<GetPriceResult> => {
     const uniswapConfig: any = config.get('exchanges.uniswap');
     const pairConfig: any = uniswapConfig[pair];
     const netName: string = this.appConfig.get('netByPair')[pair];
@@ -112,7 +138,7 @@ class InitContainer {
     return result;
   }
 
-  private async binance(pair: string): Promise<GetPriceResult> {
+  private binance = async (pair: string): Promise<GetPriceResult> => {
     const binanceConfig: any = config.get('exchanges.binance');
     const pairConfig: any = binanceConfig[pair];
 
@@ -124,7 +150,7 @@ class InitContainer {
     return result;
   }
 
-  public async okx(pair: string): Promise<GetPriceResult> {
+  public okx = async (pair: string): Promise<GetPriceResult> => {
     const okxConfig: any = config.get('exchanges.okx');
     const pairConfig: any = okxConfig[pair];
 
@@ -168,60 +194,12 @@ class InitContainer {
       potentialBuyExchange: minExchanger.provider
     };
   }
+
+  private functionMap: { [key: string]: (pair: string) => Promise<GetPriceResult> } = {
+    uniswap: this.uniswap,
+    okx: this.okx,
+    binance: this.binance
+  };
 }
 
 export { initPlugin };
-
-
-// 1. Set up Exchanges: +
-
-// Create Exchange records for each cryptocurrency exchange you want to work with.
-// Set the status to 'active' for exchanges you want to use.
-
-
-// 2. Add Cryptocurrencies:
-
-// Create Cryptocurrency records for all the cryptocurrencies you want to track.
-// Ensure to set the correct symbol, name, and decimalPlaces for each.
-
-
-// 3. Define Trading Pairs:
-
-// Create TradingPair records for each combination of cryptocurrencies you want to trade.
-// Link each TradingPair to its respective Exchange, baseCurrency, and quoteCurrency.
-// Set minOrderSize, maxOrderSize, and tradingFee for each pair.
-
-
-// 4. Update Order Books:
-
-// Regularly fetch and update OrderBook records for each TradingPair.
-// This will give you current market prices and volumes.
-
-// 5. Identify Arbitrage Opportunities:
-
-// Analyze OrderBook data across different exchanges to find price discrepancies.
-// When an opportunity is found, create an ArbitrageOpportunity record.
-
-
-// 6. Execute Transactions:
-
-// Based on identified opportunities, create Transaction records.
-// Update the status of transactions as they progress (pending -> completed or failed).
-
-
-// 7. Manage Users:
-
-// Create User records for individuals using your system.
-// Keep track of their login activity.
-
-
-// 8. Track User Balances:
-
-// Create and update UserBalance records to keep track of each user's cryptocurrency holdings.
-
-// Continuous Monitoring and Updating:
-
-// Regularly update OrderBook data.
-// Look for new arbitrage opportunities.
-// Execute transactions when profitable.
-// Update user balances after successful transactions.
