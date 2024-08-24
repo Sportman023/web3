@@ -4,26 +4,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
-const fastify_1 = __importDefault(require("fastify"));
-const exchange_route_1 = require("./routes/exchange.route");
-const plugins_1 = require("./plugins");
-const logger_util_1 = __importDefault(require("./utils/logger.util"));
-const port = Number(process.env.PORT) || 3000;
+const config_1 = __importDefault(require("config"));
+const app_1 = require("./app");
+const services_1 = require("./services");
+const services_2 = require("./services");
+const client_1 = require("@prisma/client");
+const services_3 = require("./services");
 const environment = String(process.env.NODE_ENV);
-const server = (0, fastify_1.default)({ logger: (0, logger_util_1.default)(environment) || true });
-server.register(plugins_1.telegramPlugin);
-server.register(plugins_1.prismaPlugin);
-server.register(plugins_1.initPlugin);
-server.register(plugins_1.zodPlugin);
-server.register(exchange_route_1.exchangeRoutes, { prefix: '/api/exchanges' });
-const start = async () => {
-    try {
-        await server.ready();
-        await server.listen({ port });
-    }
-    catch (err) {
-        server.log.error(err);
-        process.exit(1);
-    }
-};
-start();
+console.log({ environment });
+(function start() {
+    const telegram = new services_1.TelegramClient();
+    const csv = new services_2.CSVService();
+    const prisma = new client_1.PrismaClient();
+    const exchange = new services_3.ExchangeService();
+    new app_1.App(telegram, csv, prisma, exchange, config_1.default).bootstrap();
+})();
+//# sourceMappingURL=main.js.map

@@ -1,3 +1,3 @@
-export { ArbitrageOpportunityRepository } from './arbitrageOpportunity.repository';
-export { ExchangeRepository } from './exchange.repository';
-export { TradingPairRepository } from './tradingPair.repository';
+export { ArbitrageOpportunityRepository } from './arbitrageOpportunity.repo';
+export { ExchangeRepository } from './exchange.repo';
+export { TradingPairRepository } from './tradingPair.repo';

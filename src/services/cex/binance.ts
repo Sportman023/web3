@@ -23,6 +23,10 @@ export class BinanceService {
       const response: Response = await fetch(url);
       const body: any = await response.json();
 
+      if (body.code == 0) {
+        console.log('😞 Binance', `\x1B[31m${body.msg}\x1b[0m`);
+      }
+
       buyOneOfToken0 = Number(body.price);
       buyOneOfToken1 = 1 / body.price;
     } catch (error) {

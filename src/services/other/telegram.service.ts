@@ -1,18 +1,3 @@
-import { FastifyPluginAsync } from 'fastify';
-import fp from 'fastify-plugin';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    telegram: TelegramClient;
-  }
-}
-
-const telegramPlugin: FastifyPluginAsync = fp(async (server) => {
-  console.log('1️⃣ registering telegram...');
-  const telegram = new TelegramClient();
-  server.decorate('telegram', telegram);
-});
-
 export class TelegramClient {
   private readonly baseUrl: string;
 
@@ -66,5 +51,3 @@ export class TelegramClient {
     }
   }
 }
-
-export { telegramPlugin };

@@ -3,7 +3,7 @@ const util = require('node:util');
 
 const prisma = new PrismaClient();
 
-async function getAllData() {
+async function print() {
   try {
     const allData = await prisma.exchange.findMany({
       include: {
@@ -16,8 +16,10 @@ async function getAllData() {
       }
     });
 
-    console.log(util.inspect(allData, { showHidden: true, depth: null, colors: true })); 
-    return allData;
+    const opps = await prisma.arbitrageOpportunity.findMany();
+
+    console.log(util.inspect(allData, { showHidden: true, depth: null, colors: true }));
+    console.log(util.inspect(opps, { showHidden: true, depth: null, colors: true }));
   } catch (error) {
     console.error('Error fetching data:', error);
   } finally {
@@ -25,4 +27,4 @@ async function getAllData() {
   }
 }
 
-getAllData();
+print();

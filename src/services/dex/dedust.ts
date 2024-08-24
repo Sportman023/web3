@@ -3,7 +3,7 @@ import { Asset, Factory, MAINNET_FACTORY_ADDR, PoolType, ReadinessStatus } from 
 import { TonClient4, toNano, fromNano, Address, WalletContractV4, OpenedContract } from '@ton/ton';
 import { mnemonicToPrivateKey } from '@ton/crypto';
 
-const ASSETS = {
+const ASSETS: Record<string, Asset> = {
   TON: Asset.native(),
   USDT: Asset.jetton(Address.parse('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs')),
 };
@@ -18,15 +18,6 @@ export class DeDustService {
     });
 
     this.factory = this.tonClient.open(Factory.createFromAddress(MAINNET_FACTORY_ADDR));
-  }
-
-  public startTrackPairs() {
-    setInterval(async () => {
-      const tonToUsdt = await this.estimateSwapAmount(ASSETS.TON, ASSETS.USDT, 1);
-      const usdtToTon = await this.estimateSwapAmount(ASSETS.USDT, ASSETS.TON, 1);
-
-      console.log({ tonToUsdt, usdtToTon });
-    }, 5000);
   }
 
   public async swapTonToUsdt(amountOfTon: number) {
@@ -45,13 +36,15 @@ export class DeDustService {
     await this.swapTokens(sender, ASSETS.TON, ASSETS.USDT, amountOfTon);
   }
 
-  private async estimateSwapAmount(fromToken: Asset, toToken: Asset, amount: number): Promise<number> {
+  public async getPrice(fromTk: string, toTk: string): Promise<number> {
+    const fromToken = ASSETS[fromTk];
+    const toToken = ASSETS[toTk];
     const pool = await this.factory.getPool(PoolType.VOLATILE, [fromToken, toToken]);
 
     const provider = this.tonClient.provider(pool.address);
 
     const { amountOut } = await pool.getEstimatedSwapOut(provider, {
-      amountIn: toNano(amount),
+      amountIn: toNano(1),
       assetIn: fromToken,
     });
 
@@ -61,9 +54,9 @@ export class DeDustService {
       return result * 1000;
     } else if (fromToken === ASSETS.USDT && toToken === ASSETS.TON) {
       return result / 1000;
-    } else {
-      return result;
     }
+
+    return result;
   }
 
   private async swapTokens(sender: any, fromToken: Asset, toToken: Asset, amount: number) {

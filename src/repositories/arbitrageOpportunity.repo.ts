@@ -10,4 +10,8 @@ export class ArbitrageOpportunityRepository {
   async update(id: number, data: Prisma.ArbitrageOpportunityUpdateInput): Promise<ArbitrageOpportunity> {
     return this.prisma.arbitrageOpportunity.update({ where: { id }, data });
   }
+
+  async findAll() {
+    return this.prisma.arbitrageOpportunity.findMany();
+  }
 }

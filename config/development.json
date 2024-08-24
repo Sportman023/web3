@@ -4,11 +4,11 @@
       "ETHUSDT": "arbitrumMainnet",
       "ZROUSDT": "optimismMainnet"
     },
-    "opportunityThreshold": 0.0015,
+    "opportunityThreshold": 0.15,
     "priceTrackingInterval": {
       "hours": 0,
-      "minutes": 5,
-      "seconds": 0
+      "minutes": 0,
+      "seconds": 15
     },
     "reportingInterval": { "hours": 4, "minutes": 0, "seconds": 0 },
     "urlByNet": {
@@ -18,6 +18,13 @@
     }
   },
   "exchanges": {
+    "dedust": {
+      "TONUSDT": {
+        "symbol": "TONUSDT",
+        "token0Symbol": "tonToUsdt",
+        "token1Symbol": "usdtToTon"
+      }
+    },
     "uniswap": {
       "ETHUSDT": {
         "contractAddress": {
@@ -1417,6 +1424,11 @@
         "symbol": "ZRO-USDT",
         "token0Symbol": "zroToUsdt",
         "token1Symbol": "usdtToZro"
+      },
+      "TONUSDT": {
+        "symbol": "TON-USDT",
+        "token0Symbol": "tonToUsdt",
+        "token1Symbol": "usdtToTon"
       }
     }
   }

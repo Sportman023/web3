@@ -1,17 +1,23 @@
 import { ArbitrageOpportunity, Prisma } from '@prisma/client';
-import { ArbitrageOpportunityRepository } from '../repositories';
+import { ArbitrageOpportunityRepository, TradingPairRepository } from '../../repositories';
 
-export class ArbitrageOpportunityService {
-  constructor(
-    private arbitrageOpportunityRepo: ArbitrageOpportunityRepository
-  ) {}
+export class DBService {
+  constructor(private arbitrageOpportunityRepo: ArbitrageOpportunityRepository, private tradingPairRepo: TradingPairRepository) {}
+
+  async findAllArbitrageOpportunities() {
+    return this.arbitrageOpportunityRepo.findAll();
+  }
+
+  async findActiveTradingPairs() {
+    return this.tradingPairRepo.findActivePairs();
+  }
 
   async createArbitrageOpportunity(data: Record<string, any>): Promise<ArbitrageOpportunity> {
     const opportunityItem: Prisma.ArbitrageOpportunityCreateInput = {
       timestamp: data.currentTime,
-      profitPercentage: data.maxShift, // TODO
+      profitPercentage: data.profitPercentage,
       tradingPairName: data.pair,
-      volume: 100,
+      volume: 1,
       status: 'identified',
       buyExchange: {
         connect: { id: data.potentialBuyExchangeId }

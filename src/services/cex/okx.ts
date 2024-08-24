@@ -25,19 +25,26 @@ export class OkxService {
 
     const timestamp = new Date().toISOString();
     const signature = this.signRequest(timestamp, 'GET', this.okxConfig.get('getPricePath'), SECRET_KEY, '');
+    let item = { markPx: Infinity };
 
-    const response = await fetch(url, {
-      method: 'get',
-      headers: {
-        'Content-Type': 'application/json',
-        'OK-ACCESS-SIGN': signature,
-        'OK-ACCESS-TIMESTAMP': timestamp,
-        'OK-ACCESS-KEY': ACCESS_KEY,
-        'OK-ACCESS-PASSPHRASE': PASSPHRASE,
-      },
-    });
-    const body: any = await response.json();
-    const item = body.data.at(0);
+    try {
+      const response = await fetch(url, {
+        method: 'get',
+        headers: {
+          'Content-Type': 'application/json',
+          'OK-ACCESS-SIGN': signature,
+          'OK-ACCESS-TIMESTAMP': timestamp,
+          'OK-ACCESS-KEY': ACCESS_KEY,
+          'OK-ACCESS-PASSPHRASE': PASSPHRASE,
+        },
+      });
+      const body: any = await response.json();
+      item = body.data.at(0);
+
+    } catch (e) {
+      console.log('😞 OKX', e);
+
+    }
 
     return {
       buyOneOfToken0: Number(item.markPx),
