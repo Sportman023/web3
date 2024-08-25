@@ -11,70 +11,49 @@ import {
 } from "@ton/ton";
 import { CreateSwapOptions } from "../../types";
 
-  export class StonFiService {
-    private readonly tonClient: TonClient;
+export class StonFiService {
 
-    constructor() {
-      this.tonClient = new TonClient({
-        endpoint: "https://toncenter.com/api/v2/jsonRPC",
-      });
-    }
+  constructor() {}
 
-  public async getPrice() {
-    const askAddress = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
-    const offerAddress = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
-    const offerUnits =  '300';
-    const slippageTolerance = '0.01';
-    return this.simulateSwap({askAddress, offerAddress, offerUnits, slippageTolerance});
-    // try {
-    //   const address = Address.parse("EQD8TJ8xEWB1SpnRE4d89YO3jl0W0EiBnNS4IBaHaUmdfizE");
-    //   const pool = DEX.v1.Pool.create(address);
-    //   const poolData = await pool.getPoolData(this.tonClient.provider(address));
-    //   console.log({poolData});
-    // } catch (e) {
-    //   console.log(e);
-    // }
-  }
-
-  public async simulateSwap(query: {
+  public async getPrice(query: {
     askAddress: string;
     offerAddress: string;
     offerUnits: string;
     slippageTolerance: string;
     referralAddress?: string;
   }) {
-  let result = { data: null, message: null };
+    let result = { data: null, message: null };
 
-  const baseUrl = 'https://api.ston.fi/v1/swap/simulate';
-  const url = new URL(baseUrl);
-  const params = new URLSearchParams({
-    ask_address: query.askAddress,
-    offer_address: query.offerAddress,
-    units: query.offerUnits,
-    slippage_tolerance: query.slippageTolerance
-  });
-
-  url.search = params.toString();
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      }
+    const baseUrl = 'https://api.ston.fi/v1/reverse_swap/simulate';
+    const url = new URL(baseUrl);
+    const params = new URLSearchParams({
+      ask_address: query.askAddress,
+      offer_address: query.offerAddress,
+      units: query.offerUnits,
+      slippage_tolerance: query.slippageTolerance
     });
 
-    if (!response.ok) {
-      throw new Error(`Stonfi status: ${response.status}, ${await response.text()}`);
+    url.search = params.toString();
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Stonfi status: ${response.status}, ${await response.text()}`);
+      }
+
+      result.data = await response.json();
+    } catch (error: any) {
+      result.message = error;
     }
 
-    result.data = await response.json();
-  } catch (error: any) {
-    result.message = error;
+    return result;
   }
-
-  return result;
-}
 
   // public async executeStonfiSwap(
   //   options: CreateSwapOptions,

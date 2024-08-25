@@ -20,6 +20,17 @@
   "exchanges": {
     "dedust": {
       "TONUSDT": {
+        "baseCurrency": "TON",
+        "quoteCurrency": "USDT",
+        "symbol": "TONUSDT",
+        "token0Symbol": "tonToUsdt",
+        "token1Symbol": "usdtToTon"
+      }
+    },
+    "stonfi": {
+      "TONUSDT": {
+        "baseCurrencyAddress": "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",
+        "quoteCurrencyAddress": "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
         "symbol": "TONUSDT",
         "token0Symbol": "tonToUsdt",
         "token1Symbol": "usdtToTon"

@@ -44,20 +44,26 @@ export class ExchangeService {
   public dedust = async (pair: string): Promise<GetPriceResult> => {
     const dedustConfig: any = this.config.get('exchanges.dedust');
     const pairConfig: any = dedustConfig[pair];
+    const quoteCurrency = pairConfig.get('quoteCurrency');
+    const baseCurrency = pairConfig.get('baseCurrency');
 
     const dedustService = new DeDustService();
-    const buyOneOfToken0 = await dedustService.getPrice('TON', 'USDT');
+    const buyOneOfToken0 = await dedustService.getPrice(baseCurrency, quoteCurrency);
     const result = this.formatGetPriceResult(pairConfig, buyOneOfToken0, 'Dedust');
 
     return result;
   }
 
   public stonfi = async (pair: string): Promise<GetPriceResult> => {
-    const dedustConfig: any = this.config.get('exchanges.dedust');
-    const pairConfig: any = dedustConfig[pair];
+    const stonfiConfig: any = this.config.get('exchanges.stonfi');
+    const pairConfig: any = stonfiConfig[pair];
+    const askAddress = pairConfig.get('quoteCurrencyAddress');
+    const offerAddress = pairConfig.get('baseCurrencyAddress');
+    const offerUnits =  '300' // TODO: dynamic in the future
+    const slippageTolerance = '0.01' // TODO: dynamic in the future
 
     const stonfi = new StonFiService();
-    const priceWrapper = await stonfi.getPrice();
+    const priceWrapper = await stonfi.getPrice({askAddress, offerAddress, offerUnits, slippageTolerance});
     if (priceWrapper.message) {
       throw new Error(priceWrapper.message);
     }
