@@ -14,19 +14,14 @@ export class SchedulerService {
   ) {}
 
   public async start() {
-    console.log('scheduler registered...');
     this.exService.setConfig(this.config);
     const tradingPairs = await this.dbService.findActiveTradingPairs();
 
     scheduler.scheduleJob('* 4 * * *', async () => {
-      console.log('reporting job started...');
       this.executeReporting();
     });
 
-    // this.executeTrackingPairs();
-
     scheduler.scheduleJob('*/1 * * * *', async () => {
-      console.log('currency job started...');
       this.executeTrackingPairs(tradingPairs);
     });
   }
@@ -71,7 +66,14 @@ export class SchedulerService {
         console.log(`\x1B[31m${splittedResult.failed}\x1b[0m`);
       }
 
-      console.log('🏁 \x1b[36m%s\x1b[0m', JSON.stringify(splittedResult.success));
+      const c = {r:"\x1b[0m", b:"\x1b[1m", c:"\x1b[36m", g:"\x1b[32m", m:"\x1b[35m", y:"\x1b[33m"};
+      const e: any = { Binance:"🟨", Uniswap:"🦄", OKX:"🟦" };
+
+      console.log(`${c.b}${"Provider".padEnd(20)}${"Pair".padEnd(15)}Price${c.r}`);
+
+      splittedResult.success.forEach(({provider, pair, price}) =>
+        console.log(`${c.b}${(e[provider] || '🏛️') + ' ' + provider.padEnd(18)}${c.r}${c.c}${pair.padEnd(15)}${c.r}${c.g}$${price.toFixed(6)}${c.r}`)
+      );
 
       const valid = this.validateOpportunity(splittedResult.success);
 

@@ -10,13 +10,11 @@ const services_1 = require("./services");
 const services_2 = require("./services");
 const client_1 = require("@prisma/client");
 const services_3 = require("./services");
-const environment = String(process.env.NODE_ENV);
-console.log({ environment });
 (function start() {
     const telegram = new services_1.TelegramClient();
     const csv = new services_2.CSVService();
     const prisma = new client_1.PrismaClient();
     const exchange = new services_3.ExchangeService();
-    new app_1.App(telegram, csv, prisma, exchange, config_1.default).bootstrap();
+    new app_1.App(telegram, csv, prisma, exchange, config_1.default).bootstrap().finally(() => console.log('\u001b[37;42m', 'application started', '\x1b[0m'));
 })();
 //# sourceMappingURL=main.js.map
