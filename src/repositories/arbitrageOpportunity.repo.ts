@@ -1,4 +1,5 @@
 import { PrismaClient, ArbitrageOpportunity, Prisma } from '@prisma/client';
+import { get4HAgoDateTime } from '../utils/main.util';
 
 export class ArbitrageOpportunityRepository {
   constructor(private prisma: PrismaClient) {}
@@ -13,5 +14,15 @@ export class ArbitrageOpportunityRepository {
 
   async findAll() {
     return this.prisma.arbitrageOpportunity.findMany();
+  }
+
+  async findRecordsForReport() {
+    return this.prisma.arbitrageOpportunity.findMany({
+      where: {
+        timestamp: {
+          gte: get4HAgoDateTime()
+        }
+      }
+    });
   }
 }
