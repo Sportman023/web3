@@ -98,7 +98,8 @@ export class SchedulerService {
   private async executeReporting() {
     const chatIds = process.env.TELEGRAM_CHAT_IDS as string;
     const ids = chatIds.split(',');
-    const opportunities = await this.dbService.findAllArbitrageOpportunities(); // TODO: select only for last *h
+    const opportunities = await this.dbService.findArbitrageOpportunities();
+
     if (!opportunities.length) {
       ids.forEach(async (chatId) => {
         await this.telegram.sendMessage(chatId, '🗑️ No opportunities to arbitration.');

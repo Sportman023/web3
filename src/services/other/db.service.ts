@@ -4,8 +4,8 @@ import { ArbitrageOpportunityRepository, TradingPairRepository } from '../../rep
 export class DBService {
   constructor(private arbitrageOpportunityRepo: ArbitrageOpportunityRepository, private tradingPairRepo: TradingPairRepository) {}
 
-  async findAllArbitrageOpportunities() {
-    return this.arbitrageOpportunityRepo.findAll();
+  async findArbitrageOpportunities() {
+    return this.arbitrageOpportunityRepo.findRecordsForReport();
   }
 
   async findActiveTradingPairs() {
