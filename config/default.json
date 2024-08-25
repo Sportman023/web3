@@ -4,7 +4,7 @@
             "ethUsdt": "arbitrumMainnet",
             "zroUsdt": "optimismMainnet"
         },
-        "opportunityThreshold": 0.002,
+        "opportunityThreshold": 0.0015,
         "pairsToMonitor": ["ethUsdt", "zroUsdt"],
         "priceTrackingInterval": {
             "hours": 0,
@@ -1380,7 +1380,7 @@
             },
             "zroUsdt": {
                 "symbol": "ZRO-USDT",
-                "token0Symbol": "zroToUsdt",
+                "token0Symbol": "ethToUsdt",
                 "token1Symbol": "usdtToZro"
             }
         }
