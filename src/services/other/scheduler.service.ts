@@ -17,7 +17,7 @@ export class SchedulerService {
     this.exService.setConfig(this.config);
     const tradingPairs = await this.dbService.findActiveTradingPairs();
 
-    scheduler.scheduleJob('* 4 * * *', async () => {
+    scheduler.scheduleJob('* */4 * * *', async () => {
       this.executeReporting();
     });
 
