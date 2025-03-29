@@ -17,12 +17,37 @@ export class ArbitrageOpportunityRepository {
   }
 
   async findRecordsForReport() {
-    return this.prisma.arbitrageOpportunity.findMany({
+    const dbResult = await this.prisma.arbitrageOpportunity.findMany({
       where: {
         timestamp: {
           gte: get4HAgoDateTime()
         }
+      },
+      select: {
+        timestamp: true,
+        tradingPairName: true,
+        profitPercentage: true,
+        volume: true,
+        status: true,
+        buyExchange: {
+          select: {
+            name: true
+          }
+        },
+        sellExchange: {
+          select: {
+            name: true
+          }
+        }
       }
     });
+
+    return dbResult.map(item => {
+      return {
+        ...item,
+        buyExchange: item.buyExchange.name,
+        sellExchange: item.sellExchange.name
+      }
+    })
   }
 }
