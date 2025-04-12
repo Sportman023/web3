@@ -24,8 +24,9 @@
   },
   "dependencies": {
     "@dedust/sdk": "^0.8.7",
+    "@orbs-network/ton-access": "^2.3.3",
     "@prisma/client": "^5.17.0",
-    "@ston-fi/sdk": "^1.0.2",
+    "@ston-fi/sdk": "^2.3.0",
     "@ton/crypto": "^3.2.0",
     "@ton/ton": "^13.11.2",
     "@uniswap/sdk-core": "^5.3.1",
