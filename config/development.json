@@ -30,7 +30,10 @@
     "stonfi": {
       "TONUSDT": {
         "baseCurrencyAddress": "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",
-        "quoteCurrencyAddress": "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
+        "routerAddress": "kQALh-JBBIKK7gr0o4AVf9JZnEsFndqO0qTCyT-D-yBsWk0v",
+        "quoteCurrencyAddress": "kQB0ZYUL5M3KfrW0tSnwdFO1nC-BQHC2gcZl-WaF2on_USDT",
+        "network": "testnet",
+        "proxyTonAddress": "kQACS30DNoUQ7NfApPvzh7eBmSZ9L4ygJ-lkNWtba8TQT-Px",
         "symbol": "TONUSDT",
         "token0Symbol": "tonToUsdt",
         "token1Symbol": "usdtToTon"
